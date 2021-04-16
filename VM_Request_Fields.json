@@ -1,0 +1,15 @@
+{
+    "Hostname" : "ORR-800",
+    "Environment" : "AzureCloud",
+    "Subscription" : "Enterprise",
+    "Resource Group" : "308-Utility",
+    "Region" : "EastUS2",
+    "Virtual Network" : "",
+    "Operating System" : "",
+    "Datavail Support" : "",
+    "Date Created" : "",
+    "Requestor" : "",
+    "Approver" : "",
+    "Created By" : "",
+    "Ticket Number" : ""
+}

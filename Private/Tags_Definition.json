@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "BU": 
+        {
+            "type": "string",
+            "enum": ["Bell", "Corporate", "Kautex", "TIPL", "TIS", "TRU", "TSV","Textron Aviation", "Textron Systems"],
+            "description": "The BU Value associated with the Business Units"
+        },
+        "Cost Center": 
+        {
+            "type": "string",
+            "description": "The cost center your resource costs will be associated with"
+        },
+        "Instance": 
+        {
+            "type": "string",
+            "enum": ["SAND", "DEV", "TEST", "PROD"],
+            "description": "Defines if the resource is Sand/Dev/Test/Prod"
+        },
+        "Owner": 
+        {
+            "type": "string",
+            "pattern": "[a-z|A-Z][@][a-z|.|A-Z]",
+            "description": "The email of the manager responsible for resource cost allocation"
+        },
+        "Purpose": 
+        {
+            "type": "string",
+            "description": "The purpose of the resource within the context of the solution"
+        },
+        "Creator": 
+        {
+            "type": "string",
+            "pattern": "[a-z|A-Z][@][a-z|.|A-Z]",
+            "description": "The email of the technical resource responsible for deploying the resource"
+        },
+        "Born On Date": 
+        {
+            "type": "string",
+            "pattern": "[0-9]{2}/[0-9]{2}/[0-9]{2}",
+            "description": "The date the resource is created. Should be dynamically created"
+        },
+        "Service Level":
+        {
+            "type": "string",
+            "enum": ["12x5", "24x7", "Essentials", "Retained Support"],
+            "description": "This is how our vendor bills us. If there is no tag it is assumed to be under 24x7 support `r`n Essentials: only monitoring `r`n Retained Support: Required approval from CloudOperations@textron.com"
+               },
+        "System ID":
+        {
+            "type": "string",
+            "enum": ["12x5", "24x7", "Essentials", "Retained Support"],
+            "description": "This is how our vendor bills us. If there is no tag it is assumed to be under 24x7 support `r`n Essentials: only monitoring `r`n Retained Support: Required approval from CloudOperations@textron.com"
+            
+        }
+    },
+    "required": ["BU", "Cost Center", "Instance", "Owner", "Purpose"]
+}
+
