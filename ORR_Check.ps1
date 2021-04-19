@@ -78,6 +78,7 @@ Get variables
 #============================================#>
 $VmRF = @()
 $Validation = @()
+$Credential = @()
 
 #get Server Build variables
 <#If(test-json -Json (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String) -Schema (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String))
@@ -94,24 +95,29 @@ $VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHa
 Get credentials for all the diffrent systems
 #============================================#>
 
-#connect with an account that can list the keys to the keyvault
+#connect with an account that can list the keys to the keyvault(Public cloud)
 # $VmRF.environment = 'AzureCloud'
 disconnect-azaccount
-connect-azaccount -Environment $VmRF.Environment
+connect-azaccount -Environment 'AzureCloud'
 
 #get App registrations to Read Public and Gov Clouds
 if($VmRF.Environment -eq 'AzureCloud')
 {
 	$Credential = New-Object System.Management.Automation.PSCredential ('ff3bfd84-38cf-4ac8-b789-94f73deef96a', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-PUB).SecretValue)) 
 }
-Else{
+Elseif($VmRF.Environment -eq 'AzureUSGovernment')
+{
 	$Credential = New-Object System.Management.Automation.PSCredential ('26542231-98ba-460d-8cb6-2b3082d7b415', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-GOV).SecretValue))
+}
+else{
+	Write-Error "Please enter a valid cloud environment name" -ErrorAction Stop
 }
 
 
 <#============================================
 Check VM in Azure
 #============================================#>
+#$Validation = @()
 
 $validation += get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `

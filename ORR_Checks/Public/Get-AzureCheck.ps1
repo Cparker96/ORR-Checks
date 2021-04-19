@@ -32,6 +32,13 @@ Function Get-AzureCheck{
         )
 
     [pscustomobject]$Validation = @()
+    <#
+    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepo\TIS-Midrange\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
+    $VmName = $VmRF.Hostname
+    $environment = $VmRF.Environment
+    $subscription = $VmRF.Subscription
+    $ResourceGroup = $VmRF.'Resource Group'
+    #>
 
     <#============================================
     Login to Azure
@@ -48,15 +55,22 @@ Function Get-AzureCheck{
     }
     
     #disconnect with individual access and log in with app registration
-    disconnect-AzAccount
-    connect-AzAccount -ServicePrincipal -Environment $env.Environment -Credential $Credential -tenant $tenant
+    Try{
+        disconnect-AzAccount
+        connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop    
+    }
+    Catch{
+        $Validation += [pscustomobject]@{ValidationStep = 'Authentication'
+        FriendlyError = "Could not log in with App registration"
+        PsError = $error[0]}
+    }
 
     <#============================================
     Get VM object from Azure
     #============================================#>
 
     #set context
-    Set-AzContext -Subscription $Subscription.Subscription
+    Set-AzContext -Subscription $Subscription
 
     if(((Get-AzContext -ErrorAction Stop).subscription.name ) -ne $Subscription)
         {
@@ -79,22 +93,32 @@ Function Get-AzureCheck{
     <#============================================
     Validate Tags
     #============================================#>
-    $tags = ''
 
+    #can't figure out how to dynamically call the .json file
+    <#
+    $tags = ''
 
     $tags = $VM.Tags | convertto-json 
 
     Try
     {
-        $tags | test-json -schemafile .\ORR_Checks\Private\Tags_Definition.json -ErrorAction Stop
+        $tags | test-json -schemafile "$($MyInvocation.MyCommand.Path)\Tags_Definition.json" -ErrorAction stop
     }
     catch
     {
-
         $Validation += [pscustomobject]@{ValidationStep = 'Validation - Tags'
         FriendlyError = "Tags do not meet Validation"
-        PsError = $error[0]}
+        PsError = "$PSScriptRoot\Tags_Definition.json"}
     }
+
+        #>
+    if(!$Validation)
+    {
+        $Validation += [pscustomobject]@{ValidationStep = 'Azure Checks Passed'
+        FriendlyError = ""
+        PsError = ''}
+    }
+
 
     return $Validation
 }
