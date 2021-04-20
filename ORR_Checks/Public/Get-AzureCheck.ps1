@@ -94,21 +94,21 @@ Function Get-AzureCheck{
     Validate Tags
     #============================================#>
 
-    #can't figure out how to dynamically call the .json file
-    <#
+    #$Validation = @()
+    
     $tags = ''
 
     $tags = $VM.Tags | convertto-json 
 
     Try
     {
-        $tags | test-json -schemafile "$($MyInvocation.MyCommand.Path)\Tags_Definition.json" -ErrorAction stop
+        $tags | test-json -schemafile "$((get-module ORR_Checks).modulebase)\Private\Tags_Definition.json" -ErrorAction stop
     }
     catch
     {
         $Validation += [pscustomobject]@{ValidationStep = 'Validation - Tags'
         FriendlyError = "Tags do not meet Validation"
-        PsError = "$PSScriptRoot\Tags_Definition.json"}
+        PsError = $error[0]}
     }
 
         #>

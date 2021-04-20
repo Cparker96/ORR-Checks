@@ -50,9 +50,7 @@
         "System ID":
         {
             "type": "string",
-            "enum": ["12x5", "24x7", "Essentials", "Retained Support"],
-            "description": "This is how our vendor bills us. If there is no tag it is assumed to be under 24x7 support `r`n Essentials: only monitoring `r`n Retained Support: Required approval from CloudOperations@textron.com"
-            
+            "description": "This is how we connect the cost of every associated Azure VM resource for builling"  
         }
     },
     "required": ["BU", "Cost Center", "Instance", "Owner", "Purpose"]
