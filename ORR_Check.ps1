@@ -13,7 +13,9 @@ Manual process notes
 			i. PROD 000-799
 			ii. Dev 800-899
 			iii. Test 900-999
-		c. Check disks are associated
+		c. Server Config
+			i. Check disks are associated
+			ii. VM running
 	3) Remote in
 		a. Not domain joined - use IP to remote in
 			i. Use IP/10MOnboarding password
@@ -77,7 +79,7 @@ Links:
 Get variables
 #============================================#>
 $VmRF = @()
-$Validation = @()
+$AzCheck = @()
 $Credential = @()
 
 #get Server Build variables
@@ -117,12 +119,20 @@ else{
 <#============================================
 Check VM in Azure
 #============================================#>
-#$Validation = @()
+#$AzCheck = @()
 
-$validation += get-AzureCheck -VmName $VmRf.Hostname `
+#returns 2 objects, a Validation checks object and an Azure VM object (if )
+$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
 -ResourceGroup $VmRF.'Resource Group' `
 -Credential $credential
+
+<#
+	$AzCheck | ft
+	if(!$Validation[1]){
+		$AzureVM = $AzCheck[1]
+	}
+#>
 
 
