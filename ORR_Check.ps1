@@ -119,7 +119,7 @@ else{
 <#============================================
 Check VM in Azure
 #============================================#>
-#$AzCheck = @()
+$AzCheck = @()
 
 #returns 2 objects, a Validation checks object and an Azure VM object (if )
 $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
@@ -128,6 +128,13 @@ $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -ResourceGroup $VmRF.'Resource Group' `
 -Credential $credential
 
+try{
+	throw $AzCheck.PsError
+}
+catch
+{
+	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" 
+}
 <#
 	$AzCheck | ft
 	if(!$Validation[1]){
