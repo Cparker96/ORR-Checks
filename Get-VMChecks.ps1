@@ -27,13 +27,24 @@ Function Get-VMCheck
     Param(
         [parameter(Position = 0, Mandatory=$true)] [String] $VmName
     )
-    [pscustomobject]$Validation = @()
+    [ArrayList]$Validation = @()
 
     <#============================================
     Login to the VM
     #============================================#>
 
-    Connect-AzAccount -Environment AzureCloud
+    # This block will enable PS remoting into a server from the Azure Serial Console
+    # This needs to be enabled to bypass the issue with non domain joined servers
+    ######################################################################
+    $remotecommand = "Enable-PSRemoting -Force"
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($remotecommand)
+    $EncodedCommand = [Convert]::ToBase64String($Bytes)
+    $EncodedCommand
+
+    $target = @($VmName)
+    Invoke-AzVMRunCommand -Name $target
+    ######################################################################
+    #Connect-AzAccount -Environment AzureCloud
     $IP = Get-AzNetworkInterface -Name txainfazu901396
     $cred = (Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange' | select Name), `
      (Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange').SecretValue
@@ -69,12 +80,22 @@ Function Get-VMCheck
     Run system updates
     #============================================#>
 
-    
+    Install-Module -Name PSWindowsUpdate -Force
+    $updatelist = Get-WindowsUpdate
+    Install-WindowsUpdate
+
+    if ($updatelist.Count -gt 0)
+    {
+        $Validation += [pscustomobject]@{ValidationStep = 'Updates'
+        FriendlyError = "One or more system updates have not been installed."
+        PsError = $error[0]} 
+    }
 
     <#============================================
     Take hostname out of TIS_CMDB
     #============================================#>
 
+    $sqlcred = 
 
 
     Try
