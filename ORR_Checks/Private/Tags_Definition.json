@@ -61,7 +61,7 @@
         "Patch Group":
         {
             "type": "string",
-            "enum": ["60", "30"],
+            "pattern": "(Day[0-9]{1,2}|WeekFIN|Day[0-9]{1,2}_SOLIDCORE)_(Reboot|NoReboot)_(Linux|Windows)_(AutomationPatch|ClientPatch)_(.*)|(PaaS-NA)",
             "description": "Server Patch group"  
         }
     },
