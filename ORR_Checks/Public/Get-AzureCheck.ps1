@@ -28,6 +28,8 @@ Function Get-AzureCheck{
         [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
+        [parameter(Position=3, Mandatory=$true)] [String] $Region,
+        [parameter(Position=3, Mandatory=$true)] [String] $Network,
         [parameter(Position=2, Mandatory=$true)] [PSCredential] $Credential
         )
 
@@ -63,7 +65,7 @@ Function Get-AzureCheck{
                         PsError = $PSItem.Exception}) > $null
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
 
     $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -99,10 +101,8 @@ Function Get-AzureCheck{
         #write-error "Your context did not change to the Subscription $Subscription. Please validate the Subscription Name is valid" -ErrorAction Stop
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
-    
-
    
     $Validation.add([PSCustomObject]@{System = 'Azure'
                 Step = 'Authentication'
@@ -111,11 +111,9 @@ Function Get-AzureCheck{
                 FriendlyError = ''
                 PsError = ''}) > $null
     
-
-
     #get the VM object from Azure
     try{
-        $VM = Get-AzVM -name $VmName  -ResourceGroupName $ResourceGroup -erroraction Stop
+        $VM = Get-AzVM -name $VmName -ResourceGroupName $ResourceGroup -erroraction Stop
 
         $Validation.add([PSCustomObject]@{System = 'Azure'
                         Step = 'Authentication'
@@ -133,19 +131,40 @@ Function Get-AzureCheck{
                         PsError = $PSItem.Exception})  > $null
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
 
+    <#============================================
+    Validate VM
+    #============================================
+    $VM | gm
+
+    #don't need to check that Environment, Subscription and Resource Group match 
+    #because you wouldn't be able to get the $vm object and it would fail validation
+    
+    #check it was build in the correct location 
+    $VM.location -eq $Region
+
+    #check it was built on the right subnet
+    $Nic = ''
+    $Nic = (Get-AzNetworkInterface -ResourceId $vm.NetworkProfile.networkinterfaces.id).IpConfigurations.subnet.id
+    $bla = [regex]::Matches($nic, "Microsoft.Network\/virtualNetworks\/(?:.*)\/subnets\/(?:.*)") 
+    $network -eq 
+
+    "Region" : "USGovVirginia",
+    "Virtual Network" : "",
+    "Operating System" : "Windows Server 2016 Datacenter"
+    #>
     <#============================================
     Validate Tags
     #============================================#>
 
     #$Validation = @()
     
-    $tags = ''
-
+    $tags = @()
     $tags = $VM.Tags | convertto-json 
 
+    # Check All required tags are there and they meet the Tagging syntax standards
     Try
     {
         #Validate that all tags exist and meet syntax standards
@@ -157,7 +176,7 @@ Function Get-AzureCheck{
                         SubStep = 'TagsSyntax'
                         Status = 'Passed'
                         FriendlyError = ''
-                        PsError = $PSItem.Exception.Message}) > $null
+                        PsError = ''}) > $null
     }
     catch
     {
@@ -165,9 +184,10 @@ Function Get-AzureCheck{
                         Step = 'Validation'
                         SubStep = 'TagsSyntax'
                         Status = 'Failed'
-                        FriendlyError = "Tags do not meet Validation"
+                        FriendlyError = "Tags do not meet Validation - $($PSItem.ErrorDetails)"
                         PsError = $PSItem.Exception}) > $null
     }
+
 
 
     <#============================================

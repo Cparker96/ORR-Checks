@@ -129,12 +129,14 @@ $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Credential $credential
 
 try{
+	$AzCheck | ft
 	throw $AzCheck.PsError
 }
 catch
 {
 	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" 
 }
+
 <#
 	$AzCheck | ft
 	if(!$Validation[1]){
