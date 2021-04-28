@@ -100,8 +100,8 @@ Function Get-VMCheck
 
     Try 
     {
-        $services =  Invoke-AzVMRunCommand -VMName $VmName -CommandId 'RunPowerShellScript' `
-            -ScriptPath '.\ORR_Checks\Private\Validation_Checks.ps1'
+        $services =  Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITYEASTUS2' -VMName 'TXAINFAZU940' -CommandId 'RunPowerShellScript' `
+            -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Service_Checks.ps1'
         
         foreach ($service in $services)
         {
@@ -146,9 +146,8 @@ Function Get-VMCheck
 
     # try
     # {
-    #     #Install-Module -Name PSWindowsUpdate -Scope CurrentUser -Force
-    #     $updatelist = Get-WindowsUpdate
-
+    #     $updatelist = Invoke-AzVMRunCommand -ResourceGroupName SYS07 -VMName TXSDBSAZU900 -CommandId 'RunPowerShellScript' `
+    #         -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Check_For_Updates.ps1'
     #     if ($updatelist.Count -gt 0)
     #     {
     #         $Validation.add([PSCustomObject]@{System = 'Server'
