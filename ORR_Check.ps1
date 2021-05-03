@@ -81,6 +81,7 @@ Get variables
 $VmRF = @()
 $AzCheck = @()
 $Credential = @()
+$VM = @()
 
 #get Server Build variables
 <#If(test-json -Json (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String) -Schema (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String))
@@ -96,9 +97,10 @@ $VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHa
 <#============================================
 Get credentials for all the diffrent systems
 #============================================#>
-
+$Credential = @()
 #connect with an account that can list the keys to the keyvault(Public cloud)
 # $VmRF.environment = 'AzureCloud'
+<#
 disconnect-azaccount
 connect-azaccount -Environment 'AzureCloud'
 
@@ -115,21 +117,25 @@ else{
 	Write-Error "Please enter a valid cloud environment name" -ErrorAction Stop
 }
 
-
+#>
 <#============================================
 Check VM in Azure
 #============================================#>
 $AzCheck = @()
 
+# will log you into Azure
 #returns 2 objects, a Validation checks object and an Azure VM object (if )
 $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
 -ResourceGroup $VmRF.'Resource Group' `
--Credential $credential
+-Region $VmRF.Region `
+-Network $VmRF.'Virtual Network' #-Credential $credential
 
+#seperate the VM object from the azCheck object
 try{
 	$AzCheck | ft
+	$VM = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
 	throw $AzCheck.PsError
 }
 catch
@@ -138,10 +144,21 @@ catch
 }
 
 <#
-	$AzCheck | ft
-	if(!$Validation[1]){
-		$AzureVM = $AzCheck[1]
-	}
+
 #>
 
+<#============================================
+Log into VM and do pre domain join checks
+#============================================#>
+$VmCheck = @()
 
+$VmCheck = Get-VMCheck -VmObj $VM
+
+try{
+	$VmCheck | ft
+	throw $VmCheck.PsError
+}
+catch
+{
+	Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
+}
