@@ -26,10 +26,10 @@ Function Get-VMCheck
 {
     Param
     (
-        [parameter(Position = 0, Mandatory=$true)] [String] $VmName
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
     [System.Collections.ArrayList]$Validation = @()
-
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     <#============================================
     Login to the VM
     #============================================#>
@@ -100,16 +100,20 @@ Function Get-VMCheck
 
     Try 
     {
-        $services =  Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITYEASTUS2' -VMName 'TXAINFAZU940' -CommandId 'RunPowerShellScript' `
-            -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Service_Checks.ps1'
+        #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
+        $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
+            -ScriptPath "$ScriptPath\Service_Checks.ps1"
         
+        #convert out of CSV so that we will get a object
+        $services = $output.Value.message | convertfrom-csv
+
         foreach ($service in $services)
         {
             if (($null -eq $service.DisplayName) -or ($service.Status -ne 'Running'))
             {
                 $Validation.add([PSCustomObject]@{System = 'Server'
                 Step = 'Validation'
-                SubStep = 'Services'
+                SubStep = "Services - $($service.DisplayName)"
                 Status = 'Failed'
                 FriendlyError = 'The service' + $service.DisplayName + ' is not running or not installed.'
                 PsError = $PSItem.Exception}) > $null 
@@ -223,6 +227,7 @@ Function Get-VMCheck
 
     #     return $Validation
     # }
+    return $Validation
 }
 
 
