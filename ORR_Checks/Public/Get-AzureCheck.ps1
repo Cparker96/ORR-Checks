@@ -30,11 +30,12 @@ Function Get-AzureCheck{
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
         [parameter(Position=3, Mandatory=$true)] [String] $Region,
         [parameter(Position=3, Mandatory=$true)] [String] $Network,
-        [parameter(Position=2, Mandatory=$true)] [PSCredential] $Credential
+        [parameter(Position=2, Mandatory=$false)] [PSCredential] $Credential
         )
 
     [System.Collections.ArrayList]$Validation = @()
     $VM = @()
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     <#
     $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepo\TIS-Midrange\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
     $VmName = $VmRF.Hostname
@@ -54,7 +55,12 @@ Function Get-AzureCheck{
     #disconnect with individual access and log in with app registration
     Try{
         disconnect-AzAccount > $null
-        connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop -WarningAction Ignore > $null  
+        if(!$Credential){
+            connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+        }
+        else{
+            connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop -WarningAction Ignore > $null  
+        }
     }
     Catch{
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -87,7 +93,6 @@ Function Get-AzureCheck{
         {
             throw ('Subscription does not match {0}, returned ' -f $Subscription, $azContext.subscription.name)
         }
-        
     }
     catch {
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -168,7 +173,7 @@ Function Get-AzureCheck{
     Try
     {
         #Validate that all tags exist and meet syntax standards
-        $tags | test-json -schemafile "$((get-module ORR_Checks).modulebase)\Private\Tags_Definition.json" -ErrorAction stop
+        $tags | test-json -schemafile "$ScriptPath\Tags_Definition.json" -ErrorAction stop
         
         #if an error is not thrown then provide the 
         $Validation.add([PSCustomObject]@{System = 'Azure'
