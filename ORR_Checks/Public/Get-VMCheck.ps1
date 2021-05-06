@@ -34,7 +34,7 @@ Function Get-VMCheck
     Login to the VM
     #============================================#>
 
-$IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
+    $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
     
     # This block will enable PS remoting into a server from the Azure Serial Console
     # This needs to be enabled to bypass the issue with non domain joined servers
@@ -102,7 +102,7 @@ $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces
     {
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
         $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-            -ScriptPath "$ScriptPath\Service_Checks.ps1"
+            -ScriptPath "$ScriptPath\Service_Checks.ps1" -ErrorAction Stop
         
         #convert out of CSV so that we will get a object
         $services = $output.Value.message | convertfrom-csv
@@ -146,11 +146,12 @@ $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces
     
     <#============================================
     Run system updates
-    #============================================#>
+    #============================================
 
     Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Add_Trusted_Hosts.ps1"
-    # try
+    #>
+        # try
     # {
     #     $updatelist = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     #         -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Check_For_Updates.ps1'
@@ -229,6 +230,44 @@ $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces
 
     #     return $Validation
     # }
+
+    <#============================================
+    Validate all steps were taken and passed
+    Step              SubStep
+    ----              -------
+    Validation        Services - Microsoft Monitoring Agent
+    Validation        Services - McAfee Agent Service
+    Validation        Services - SplunkForwarder Service
+    Validation        Services - Tenable Nessus Agent
+    #============================================#>
+  
+    [System.Collections.ArrayList]$ValidationPassed = @()
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Microsoft Monitoring Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - McAfee Agent Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - SplunkForwarder Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'cccccccccccccccccc'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+
+
+    if(!(Compare-Object $Validation $ValidationPassed))
+    {
+        $Validation.add([PSCustomObject]@{System = 'Server'
+                        Step = 'Check'
+                        SubStep = 'Passed'
+                        Status = 'Passed'
+                        FriendlyError = ''
+                        PsError = ''}) > $null
+    }
+    else
+    {
+        $Validation.add([PSCustomObject]@{System = 'Server'
+                        Step = 'Check'
+                        SubStep = 'Failed'
+                        Status = 'Failed'
+                        FriendlyError = ""
+                        PsError = ''}) > $null
+    }
+
+
     return $Validation
 }
 
