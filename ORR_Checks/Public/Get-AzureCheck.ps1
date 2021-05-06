@@ -28,8 +28,8 @@ Function Get-AzureCheck{
         [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
-        [parameter(Position=3, Mandatory=$false)] [String] $Region,
-        [parameter(Position=3, Mandatory=$false)] [String] $Network,
+        [parameter(Position=3, Mandatory=$true)] [String] $Region,
+        [parameter(Position=3, Mandatory=$true)] [String] $Network,
         [parameter(Position=2, Mandatory=$false)] [PSCredential] $Credential
         )
 
@@ -37,7 +37,7 @@ Function Get-AzureCheck{
     $VM = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     <#
-    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepo\TIS-Midrange\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
+    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepos\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
     $VmName = $VmRF.Hostname
     $environment = $VmRF.Environment
     $subscription = $VmRF.Subscription
@@ -173,7 +173,7 @@ Function Get-AzureCheck{
     Try
     {
         #Validate that all tags exist and meet syntax standards
-        $tags | test-json -schemafile "$ScriptPath\Tags_Definition.json" -ErrorAction stop
+        $tags | test-json -schemafile "$ScriptPath\Tags_Definition.json" -ErrorAction stop > $null
         
         #if an error is not thrown then provide the 
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -207,11 +207,10 @@ Function Get-AzureCheck{
     #============================================#>
     [System.Collections.ArrayList]$ValidationPassed = @()
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Login'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Login'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Context'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'VM'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsSyntax'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsValue'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    #[void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsValue'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
 
     if(!(Compare-Object $Validation $ValidationPassed))
     {
