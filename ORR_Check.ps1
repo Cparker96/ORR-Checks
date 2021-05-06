@@ -83,44 +83,18 @@ $AzCheck = @()
 $Credential = @()
 $VM = @()
 
-#get Server Build variables
-<#If(test-json -Json (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String) -Schema (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String))
-{  
+#get Server Build variables from VM_Request_Fields.json
+Try
+{
 	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
-  
-}else 
-{
-    Write-Error "Error with VM Request Input `r`n $error[0]" -ErrorAction Stop
-}#>
-$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
-
-<#============================================
-Get credentials for all the diffrent systems
-#============================================#>
-$Credential = @()
-#connect with an account that can list the keys to the keyvault(Public cloud)
-# $VmRF.environment = 'AzureCloud'
-<#
-disconnect-azaccount
-connect-azaccount -Environment 'AzureCloud'
-
-#get App registrations to Read Public and Gov Clouds
-if($VmRF.Environment -eq 'AzureCloud')
-{
-	$Credential = New-Object System.Management.Automation.PSCredential ('ff3bfd84-38cf-4ac8-b789-94f73deef96a', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-PUB).SecretValue)) 
 }
-Elseif($VmRF.Environment -eq 'AzureUSGovernment')
+catch
 {
-	$Credential = New-Object System.Management.Automation.PSCredential ('26542231-98ba-460d-8cb6-2b3082d7b415', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-GOV).SecretValue))
+	write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)"
 }
-else{
-	Write-Error "Please enter a valid cloud environment name" -ErrorAction Stop
-}
-
-#>
 <#============================================
 Check VM in Azure
-#============================================#>
+============================================#>
 $AzCheck = @()
 
 # will log you into Azure
@@ -129,8 +103,6 @@ $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
 -ResourceGroup $VmRF.'Resource Group' 
-#-Region $VmRF.Region `
-#-Network $VmRF.'Virtual Network' #-Credential $credential
 
 #seperate the VM object from the azCheck object
 try{
@@ -143,9 +115,6 @@ catch
 	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" 
 }
 
-<#
-
-#>
 
 <#============================================
 Log into VM and do pre domain join checks
