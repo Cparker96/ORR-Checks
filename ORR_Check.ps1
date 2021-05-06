@@ -142,3 +142,11 @@ catch
 {
 	Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
 }
+
+
+$Solution = ($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck
+
+
+
+$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
+$Solution | export-csv "c:\temp\$filename.csv"
