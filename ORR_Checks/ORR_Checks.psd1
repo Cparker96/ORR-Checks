@@ -1,6 +1,6 @@
 @{
 RootModule = 'ORR_Checks.psm1'
-ModuleVersion = '1.01'
+ModuleVersion = '1.00'
 Author = 'Claire Larvin'
 CompanyName = 'Textron Inc.'
 RequiredModules = @("az", @{ModuleName = "az"; ModuleVersion= "5.5.0"})
