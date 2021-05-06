@@ -108,11 +108,16 @@ $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 try{
 	$AzCheck | ft
 	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
-	throw $AzCheck.PsError
+	foreach($step in $azcheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
+	}
 }
-catch
-{
-	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" 
+catch{
+	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" -erroraction Stop
 }
 
 
@@ -125,7 +130,13 @@ $VmCheck = Get-VMCheck -VmObj $VmObj
 
 try{
 	$VmCheck | ft
-	throw $VmCheck.PsError
+	foreach($step in $VmCheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
+	}
 }
 catch
 {
