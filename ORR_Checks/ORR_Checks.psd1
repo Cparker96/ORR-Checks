@@ -9,6 +9,6 @@ PowerShellVersion = '7.1.2'
 DotNetFrameworkVersion = '4.0'
 CLRVersion = '4.0'
 AliasesToExport = @()
-FunctionsToExport = @('get-AzureCheck', 'Get-VMChecks')
+FunctionsToExport = @('get-AzureCheck', 'Get-VMCheck')
 }
 
