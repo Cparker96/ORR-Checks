@@ -92,7 +92,7 @@ $VM = @()
 {
     Write-Error "Error with VM Request Input `r`n $error[0]" -ErrorAction Stop
 }#>
-$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
+$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields1.json | convertfrom-json -AsHashtable
 
 <#============================================
 Get credentials for all the diffrent systems

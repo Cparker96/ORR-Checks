@@ -4,7 +4,7 @@
     "Subscription" : "Enterprise",
     "Resource Group" : "308-Utility",
     "Region" : "EastUS2",
-    "Virtual Network" : "DtlTisUtility",
+    "Virtual Network" : "Enterprise-VNet-eastus2",
     "Operating System" : "Windows Server 2019 Datacenter",
     "Datavail Support" : "",
     "Date Created" : "04/15/2020",

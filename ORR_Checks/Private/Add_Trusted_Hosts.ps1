@@ -1,1 +1,1 @@
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value 10.156.82.239 -Force
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value 10.151.240.67 -Force
