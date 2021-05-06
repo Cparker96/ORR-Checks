@@ -18,6 +18,11 @@
             "enum": ["SAND", "DEV", "TEST", "PROD"],
             "description": "Defines if the resource is Sand/Dev/Test/Prod"
         },
+        "Project": 
+        {
+            "type": "string",
+            "description": "The Project the resources are associated with"
+        },
         "Owner": 
         {
             "type": "string",
