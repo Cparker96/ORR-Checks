@@ -28,8 +28,8 @@ Function Get-AzureCheck{
         [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
-        [parameter(Position=3, Mandatory=$true)] [String] $Region,
-        [parameter(Position=3, Mandatory=$true)] [String] $Network,
+        [parameter(Position=3, Mandatory=$false)] [String] $Region,
+        [parameter(Position=3, Mandatory=$false)] [String] $Network,
         [parameter(Position=2, Mandatory=$false)] [PSCredential] $Credential
         )
 

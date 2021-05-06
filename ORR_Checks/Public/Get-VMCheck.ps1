@@ -34,7 +34,7 @@ Function Get-VMCheck
     Login to the VM
     #============================================#>
 
-
+$IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
     
     # This block will enable PS remoting into a server from the Azure Serial Console
     # This needs to be enabled to bypass the issue with non domain joined servers
@@ -101,7 +101,7 @@ Function Get-VMCheck
     Try 
     {
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
-        $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
+        $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
             -ScriptPath "$ScriptPath\Service_Checks.ps1"
         
         #convert out of CSV so that we will get a object
@@ -148,9 +148,11 @@ Function Get-VMCheck
     Run system updates
     #============================================#>
 
+    Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Add_Trusted_Hosts.ps1"
     # try
     # {
-    #     $updatelist = Invoke-AzVMRunCommand -ResourceGroupName SYS07 -VMName TXSDBSAZU900 -CommandId 'RunPowerShellScript' `
+    #     $updatelist = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     #         -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Check_For_Updates.ps1'
     #     if ($updatelist.Count -gt 0)
     #     {

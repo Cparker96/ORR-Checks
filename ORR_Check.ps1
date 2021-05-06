@@ -128,14 +128,14 @@ $AzCheck = @()
 $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
--ResourceGroup $VmRF.'Resource Group' `
--Region $VmRF.Region `
--Network $VmRF.'Virtual Network' #-Credential $credential
+-ResourceGroup $VmRF.'Resource Group' 
+#-Region $VmRF.Region `
+#-Network $VmRF.'Virtual Network' #-Credential $credential
 
 #seperate the VM object from the azCheck object
 try{
 	$AzCheck | ft
-	$VM = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
+	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
 	throw $AzCheck.PsError
 }
 catch
@@ -152,7 +152,7 @@ Log into VM and do pre domain join checks
 #============================================#>
 $VmCheck = @()
 
-$VmCheck = Get-VMCheck -VmObj $VM
+$VmCheck = Get-VMCheck -VmObj $VmObj
 
 try{
 	$VmCheck | ft

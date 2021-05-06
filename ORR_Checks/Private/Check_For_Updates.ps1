@@ -1,2 +1,2 @@
-#Install-Module PSWindowsUpdate
-#Get-WindowsUpdate
+Install-Module PSWindowsUpdate
+Get-WindowsUpdate
