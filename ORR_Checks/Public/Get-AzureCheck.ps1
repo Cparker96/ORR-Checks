@@ -28,13 +28,16 @@ Function Get-AzureCheck{
         [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
-        [parameter(Position=2, Mandatory=$true)] [PSCredential] $Credential
+        [parameter(Position=3, Mandatory=$false)] [String] $Region,
+        [parameter(Position=3, Mandatory=$false)] [String] $Network,
+        [parameter(Position=2, Mandatory=$false)] [PSCredential] $Credential
         )
 
     [System.Collections.ArrayList]$Validation = @()
     $VM = @()
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     <#
-    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepo\TIS-Midrange\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
+    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepos\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
     $VmName = $VmRF.Hostname
     $environment = $VmRF.Environment
     $subscription = $VmRF.Subscription
@@ -52,14 +55,12 @@ Function Get-AzureCheck{
     #disconnect with individual access and log in with app registration
     Try{
         disconnect-AzAccount > $null
-        connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop  > $null  
-    
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-                        Step = 'Authentication'
-                        SubStep = 'Login'
-                        Status = 'Passed'
-                        FriendlyError = ''
-                        PsError = ''}) > $null 
+        if(!$Credential){
+            connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+        }
+        else{
+            connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop -WarningAction Ignore > $null  
+        }
     }
     Catch{
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -67,50 +68,57 @@ Function Get-AzureCheck{
                         SubStep = 'Login'
                         Status = 'Failed'
                         FriendlyError = "Could not log in with App registration"
-                        PsError = $PSItem.Exception.Message}) > $null
-
-        # re throw the error
-        throw
+                        PsError = $PSItem.Exception}) > $null
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
+
+    $Validation.add([PSCustomObject]@{System = 'Azure'
+                    Step = 'Authentication'
+                    SubStep = 'Login'
+                    Status = 'Passed'
+                    FriendlyError = ''
+                    PsError = ''}) > $null 
 
     <#============================================
     Get VM object from Azure
     #============================================#>
 
     #set context (will error silently if subscription isn't a valid field)
-    Set-AzContext -Subscription $Subscription > $null
-
-    if(((Get-AzContext -ErrorAction Stop).subscription.name ) -ne $Subscription)
-    {
+    try {
+        Set-AzContext -Subscription $Subscription -ErrorAction Stop > $null
+        $azContext = (Get-AzContext -ErrorAction Stop)
+        if(($azContext.subscription.name ) -ne $Subscription)
+        {
+            throw ('Subscription does not match {0}, returned ' -f $Subscription, $azContext.subscription.name)
+        }
+    }
+    catch {
         $Validation.add([PSCustomObject]@{System = 'Azure'
                         Step = 'Authentication'
                         SubStep = 'Context'
                         Status = 'Failed'
                         FriendlyError = "Your context did not change to the Subscription $Subscription. Please validate the Subscription Name is valid"
-                        PsError = $PSItem.Exception.Message}) > $null
+                        PsError = $PSItem.Exception}) > $null
         
         # re throw a terminating error
-        write-error "Your context did not change to the Subscription $Subscription. Please validate the Subscription Name is valid" -ErrorAction Stop
+        #write-error "Your context did not change to the Subscription $Subscription. Please validate the Subscription Name is valid" -ErrorAction Stop
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
-    else {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-                    Step = 'Authentication'
-                    SubStep = 'Context'
-                    Status = 'Passed'
-                    FriendlyError = ''
-                    PsError = ''}) > $null
-    }
-
-
+   
+    $Validation.add([PSCustomObject]@{System = 'Azure'
+                Step = 'Authentication'
+                SubStep = 'Context'
+                Status = 'Passed'
+                FriendlyError = ''
+                PsError = ''}) > $null
+    
     #get the VM object from Azure
     try{
-        $VM = Get-AzVM -name $VmName  -ResourceGroupName $ResourceGroup -erroraction Stop
+        $VM = Get-AzVM -name $VmName -ResourceGroupName $ResourceGroup -erroraction Stop
 
         $Validation.add([PSCustomObject]@{System = 'Azure'
                         Step = 'Authentication'
@@ -125,28 +133,47 @@ Function Get-AzureCheck{
                         SubStep = 'VM'
                         Status = 'Failed'
                         FriendlyError = "Could not validate that the Server $VmName exists in Azure.`r`nAzure Cloud : $environment`r`nSubscription : $Subscription `r`nAzure Cloud : $ResourceGroup"
-                        PsError = $PSItem.Exception.Message})  > $null
-        # re throw the error
-        throw
+                        PsError = $PSItem.Exception})  > $null
 
         # return the $validation object
-        return $Validation
+        return ($Validation, $VM)
     }
 
+    <#============================================
+    Validate VM
+    #============================================
+    $VM | gm
+
+    #don't need to check that Environment, Subscription and Resource Group match 
+    #because you wouldn't be able to get the $vm object and it would fail validation
+    
+    #check it was build in the correct location 
+    $VM.location -eq $Region
+
+    #check it was built on the right subnet
+    $Nic = ''
+    $Nic = (Get-AzNetworkInterface -ResourceId $vm.NetworkProfile.networkinterfaces.id).IpConfigurations.subnet.id
+    $bla = [regex]::Matches($nic, "Microsoft.Network\/virtualNetworks\/(?:.*)\/subnets\/(?:.*)") 
+    $network -eq 
+
+    "Region" : "USGovVirginia",
+    "Virtual Network" : "",
+    "Operating System" : "Windows Server 2016 Datacenter"
+    #>
     <#============================================
     Validate Tags
     #============================================#>
 
     #$Validation = @()
     
-    $tags = ''
-
+    $tags = @()
     $tags = $VM.Tags | convertto-json 
 
+    # Check All required tags are there and they meet the Tagging syntax standards
     Try
     {
         #Validate that all tags exist and meet syntax standards
-        $tags | test-json -schemafile "$((get-module ORR_Checks).modulebase)\Private\Tags_Definition.json" -ErrorAction stop
+        $tags | test-json -schemafile "$ScriptPath\Tags_Definition.json" -ErrorAction stop > $null
         
         #if an error is not thrown then provide the 
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -154,7 +181,7 @@ Function Get-AzureCheck{
                         SubStep = 'TagsSyntax'
                         Status = 'Passed'
                         FriendlyError = ''
-                        PsError = $PSItem.Exception.Message}) > $null
+                        PsError = ''}) > $null
     }
     catch
     {
@@ -162,9 +189,10 @@ Function Get-AzureCheck{
                         Step = 'Validation'
                         SubStep = 'TagsSyntax'
                         Status = 'Failed'
-                        FriendlyError = "Tags do not meet Validation"
-                        PsError = $PSItem.Exception.Message}) > $null
+                        FriendlyError = "Tags do not meet Validation - $($PSItem.ErrorDetails)"
+                        PsError = $PSItem.Exception}) > $null
     }
+
 
 
     <#============================================
@@ -179,11 +207,10 @@ Function Get-AzureCheck{
     #============================================#>
     [System.Collections.ArrayList]$ValidationPassed = @()
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Login'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Login'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Context'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'VM'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsSyntax'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsValue'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    #[void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Validation'; SubStep = 'TagsValue'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
 
     if(!(Compare-Object $Validation $ValidationPassed))
     {

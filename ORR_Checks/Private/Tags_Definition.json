@@ -18,6 +18,11 @@
             "enum": ["SAND", "DEV", "TEST", "PROD"],
             "description": "Defines if the resource is Sand/Dev/Test/Prod"
         },
+        "Project": 
+        {
+            "type": "string",
+            "description": "The Project the resources are associated with"
+        },
         "Owner": 
         {
             "type": "string",
@@ -61,7 +66,7 @@
         "Patch Group":
         {
             "type": "string",
-            "enum": ["60", "30"],
+            "pattern": "(Day[0-9]{1,2}|WeekFIN|Day[0-9]{1,2}_SOLIDCORE)_(Reboot|NoReboot)_(Linux|Windows)_(AutomationPatch|ClientPatch)_(.*)|(PaaS-NA)",
             "description": "Server Patch group"  
         }
     },

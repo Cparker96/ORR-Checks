@@ -81,58 +81,72 @@ Get variables
 $VmRF = @()
 $AzCheck = @()
 $Credential = @()
+$VM = @()
 
-#get Server Build variables
-<#If(test-json -Json (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String) -Schema (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String))
-{  
+#get Server Build variables from VM_Request_Fields.json
+Try
+{
 	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
-  
-}else 
-{
-    Write-Error "Error with VM Request Input `r`n $error[0]" -ErrorAction Stop
-}#>
-$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
-
-<#============================================
-Get credentials for all the diffrent systems
-#============================================#>
-
-#connect with an account that can list the keys to the keyvault(Public cloud)
-# $VmRF.environment = 'AzureCloud'
-disconnect-azaccount
-connect-azaccount -Environment 'AzureCloud'
-
-#get App registrations to Read Public and Gov Clouds
-if($VmRF.Environment -eq 'AzureCloud')
-{
-	$Credential = New-Object System.Management.Automation.PSCredential ('ff3bfd84-38cf-4ac8-b789-94f73deef96a', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-PUB).SecretValue)) 
 }
-Elseif($VmRF.Environment -eq 'AzureUSGovernment')
+catch
 {
-	$Credential = New-Object System.Management.Automation.PSCredential ('26542231-98ba-460d-8cb6-2b3082d7b415', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-GOV).SecretValue))
+	write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)"
 }
-else{
-	Write-Error "Please enter a valid cloud environment name" -ErrorAction Stop
-}
-
-
 <#============================================
 Check VM in Azure
-#============================================#>
-#$AzCheck = @()
+============================================#>
+$AzCheck = @()
 
+# will log you into Azure
 #returns 2 objects, a Validation checks object and an Azure VM object (if )
 $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
--ResourceGroup $VmRF.'Resource Group' `
--Credential $credential
+-ResourceGroup $VmRF.'Resource Group' 
 
-<#
+#seperate the VM object from the azCheck object
+try{
 	$AzCheck | ft
-	if(!$Validation[1]){
-		$AzureVM = $AzCheck[1]
+	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
+	foreach($step in $azcheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
 	}
-#>
+}
+catch{
+	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" -erroraction Stop
+}
 
 
+<#============================================
+Log into VM and do pre domain join checks
+#============================================#>
+$VmCheck = @()
+
+$VmCheck = Get-VMCheck -VmObj $VmObj
+
+try{
+	$VmCheck | ft
+	foreach($step in $VmCheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
+	}
+}
+catch
+{
+	Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
+}
+
+
+$Solution = ($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck
+
+
+
+$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
+$Solution | export-csv "c:\temp\$filename.csv"
