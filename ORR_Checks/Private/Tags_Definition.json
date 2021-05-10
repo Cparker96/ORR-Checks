@@ -70,6 +70,6 @@
             "description": "Server Patch group"  
         }
     },
-    "required": ["BU", "Cost Center", "Instance", "Owner", "Purpose", "Service Level", "System ID"]
+    "required": ["BU", "Cost Center", "Instance", "Owner", "Purpose", "Patch Group", "Service Level", "System ID"]
 }
 
