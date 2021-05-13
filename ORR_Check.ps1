@@ -107,20 +107,15 @@ connect-azaccount -Environment 'AzureCloud'
 #get App registrations to Read Public and Gov Clouds
 if($VmRF.Environment -eq 'AzureCloud')
 {
-	$Credential = New-Object System.Management.Automation.PSCredential ('ff3bfd84-38cf-4ac8-b789-94f73deef96a', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-PUB).SecretValue)) 
+	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
 }
-Elseif($VmRF.Environment -eq 'AzureUSGovernment')
+catch
 {
-	$Credential = New-Object System.Management.Automation.PSCredential ('26542231-98ba-460d-8cb6-2b3082d7b415', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name AzureRepo-GOV).SecretValue))
+	write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)"
 }
-else{
-	Write-Error "Please enter a valid cloud environment name" -ErrorAction Stop
-}
-
-#>
 <#============================================
 Check VM in Azure
-#============================================#>
+============================================#>
 $AzCheck = @()
 
 # will log you into Azure
@@ -129,23 +124,23 @@ $AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 -Environment $VmRF.Environment `
 -Subscription $VmRF.Subscription `
 -ResourceGroup $VmRF.'Resource Group' 
-#-Region $VmRF.Region `
-#-Network $VmRF.'Virtual Network' #-Credential $credential
 
 #seperate the VM object from the azCheck object
 try{
 	$AzCheck | ft
 	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
-	throw $AzCheck.PsError
+	foreach($step in $azcheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
+	}
 }
-catch
-{
-	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" 
+catch{
+	Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" -erroraction Stop
 }
 
-<#
-
-#>
 
 <#============================================
 Log into VM and do pre domain join checks
@@ -156,9 +151,23 @@ $VmCheck = Get-VMCheck -VmObj $VmObj
 
 try{
 	$VmCheck | ft
-	throw $VmCheck.PsError
+	foreach($step in $VmCheck.PsError)
+	{
+		if($step -ne '')
+		{
+			throw $step.PsError
+		}
+	}
 }
 catch
 {
 	Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
 }
+
+
+$Solution = ($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck
+
+
+
+$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
+$Solution | export-csv "c:\temp\$filename.csv"
