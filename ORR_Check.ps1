@@ -86,7 +86,7 @@ $VM = @()
 #get Server Build variables from VM_Request_Fields.json
 Try
 {
-	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
+	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
 }
 catch
 {

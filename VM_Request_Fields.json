@@ -1,8 +1,8 @@
 {
-    "Hostname" : "TXAINFAZU940",
+    "Hostname" : "TXAIDCAZU801",
     "Environment" : "AzureCloud",
     "Subscription" : "Enterprise",
-    "Resource Group" : "TIS-UTILITYEASTUS2",
+    "Resource Group" : "TIS-IAM1",
     "Region" : "EastUS2",
     "Virtual Network" : "Bla",
     "Operating System" : "Windows Server 2016 Datacenter",

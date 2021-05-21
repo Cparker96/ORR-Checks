@@ -22,7 +22,7 @@ To import a local module follow the below steps:
 2. Make sure the module was also cleaned up from your session
     get-module ORR_Checks | remove-module
 3. Understand the 'paths' that powershell looks for modules
-    $env:PSModulePath.split
+    $env:PSModulePath.split(';')
 4. Place the ORR_Checks folder in one of those 'path' directories. This folder should contain 
     - 2 folders named 'Public' and 'Private' which hold the functions and supporting files for the script
     - A ORR_Checks.psm1 file which loads the contents of the 'Public' and 'Private' folder into the session
