@@ -43,57 +43,9 @@ Function Get-VMCheck
     # $Bytes = [System.Text.Encoding]::Unicode.GetBytes($remotecommand)
     # $EncodedCommand = [Convert]::ToBase64String($Bytes)
     # $EncodedCommand
-
-    # $target = @($VmName)
-    # try 
-    # {
-    #     Invoke-AzVMRunCommand -Name $target
-
-    #     $Validation.add([PSCustomObject]@{System = 'Azure'
-    #                     Step = 'Authentication'
-    #                     SubStep = 'Login'
-    #                     Status = 'Passed'
-    #                     FriendlyError = ''
-    #                     PsError = ''}) > $null 
-    # }
-    # catch
-    # {
-    #     $Validation.add([PSCustomObject]@{System = 'Azure'
-    #                     Step = 'Authentication'
-    #                     SubStep = 'Login'
-    #                     Status = 'Failed'
-    #                     FriendlyError = 'Could not get into'
-    #                     PsError = $PSItem.Exception}) > $null 
-    # }
-    ######################################################################
-    #Connect-AzAccount -Environment AzureCloud
-    #$IP = Get-AzNetworkInterface -Name txainfazu901396
     #$cred = (Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange' | select Name), `
      #(Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange').SecretValue
     
-    # Try
-    # {
-    #     Enter-PSSession -ComputerName $VmName `
-    #         -Credential $cred  
-
-    #         $Validation.add([PSCustomObject]@{System = 'Server'
-    #         Step = 'Authentication'
-    #         SubStep = 'Login'
-    #         Status = 'Passed'
-    #         FriendlyError = ''
-    #         PsError = ''}) > $null 
-    # }
-    # Catch{
-    #     $Validation.add([PSCustomObject]@{System = 'Server'
-    #                     Step = 'Authentication'
-    #                     SubStep = 'Login'
-    #                     Status = 'Failed'
-    #                     FriendlyError = "Could not get into $($VmName.Name)"
-    #                     PsError = $PSItem.Exception}) > $null
-        
-    #     return $Validation
-    # }
-
     <#==================================================
     Validate against services that should be running
     #===================================================#>
@@ -141,9 +93,6 @@ Function Get-VMCheck
         return $Validation
     }
     
-
-   
-    
     <#============================================
     Run system updates
     #============================================
@@ -153,38 +102,92 @@ Function Get-VMCheck
     #>
         # try
     # {
-    #     $updatelist = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-    #         -ScriptPath 'C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Check_For_Updates.ps1'
-    #     if ($updatelist.Count -gt 0)
+    #     $trustedhosts = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+    #     -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Add_Trusted_Hosts.ps1"
+
+    #     $validatehosts = $trustedhosts.Value.message | convertfrom-csv
+
+    #     foreach ($host in $validatehosts)
     #     {
-    #         $Validation.add([PSCustomObject]@{System = 'Server'
-    #         Step = 'Validation'
-    #         SubStep = 'Updates'
-    #         Status = 'Failed'
-    #         FriendlyError = 'There are still pending Windows Updates'
-    #         PsError = $PSItem.Exception}) > $null 
+    #         if ($null -eq $trustedhosts.Value)
+    #         {
+    #             $Validation.add([PSCustomObject]@{System = 'Server'
+    #             Step = 'Validation'
+    #             SubStep = "TrustedHosts"
+    #             Status = 'Failed'
+    #             FriendlyError = 'The VM is not configured for non domain remoting'
+    #             PsError = $PSItem.Exception}) > $null 
+    #         }
+    #         else 
+    #         {
+    #             $Validation.add([PSCustomObject]@{System = 'Server'
+    #             Step = 'Validation'
+    #             SubStep = "TrustedHosts"
+    #             Status = 'Passed'
+    #             FriendlyError = ''
+    #             PsError = ''}) > $null 
+    #         }
     #     }
-    #     else
-    #     {
-    #         $Validation.add([PSCustomObject]@{System = 'Server'
-    #         Step = 'Validation'
-    #         SubStep = 'Updates'
-    #         Status = 'Passed'
-    #         FriendlyError = ''
-    #         PsError = ''}) > $null 
-    #     }
-    # }
-    # catch
+    # }   
+    # catch 
     # {
     #     $Validation.add([PSCustomObject]@{System = 'Server'
     #     Step = 'Validation'
-    #     SubStep = 'Updates'
+    #     SubStep = "TrustedHosts"
     #     Status = 'Failed'
-    #     FriendlyError = 'Could not install modules'
+    #     FriendlyError = 'The VM is not configured for non domain remoting'
     #     PsError = $PSItem.Exception}) > $null 
 
     #     return $Validation
     # }
+     
+    <#============================================
+    Run system updates
+    #============================================#>
+    
+    $updates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Run_Updates.ps1"
+
+    <#============================================
+    Validate updates were executed
+    #============================================#>
+    try 
+    {
+        $validateupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Validate_Updates.ps1"
+        
+        $updatelist = $validateupdates.Value.message | ConvertFrom-Csv
+
+        if ($null -ne $updatelist)
+        {
+            $Validation.add([PSCustomObject]@{System = 'Server'
+            Step = 'Validation'
+            SubStep = "Updates"
+            Status = 'Failed'
+            FriendlyError = 'There are still updates that need to be applied'
+            PsError = $PSItem.Exception}) > $null 
+        }
+        else 
+        {
+            $Validation.add([PSCustomObject]@{System = 'Server'
+            Step = 'Validation'
+            SubStep = "Updates"
+            Status = 'Passed'
+            FriendlyError = ''
+            PsError = ''}) > $null 
+        }
+    }
+    catch 
+    {
+        $Validation.add([PSCustomObject]@{System = 'Server'
+        Step = 'Validation'
+        SubStep = "Updates"
+        Status = 'Failed'
+        FriendlyError = 'Check to make sure you have the package installed.'
+        PsError = $PSItem.Exception}) > $null 
+
+        return $Validation
+    }
 
     <#============================================
     Take hostname out of TIS_CMDB
