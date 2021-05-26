@@ -193,46 +193,45 @@ Function Get-VMCheck
     Take hostname out of TIS_CMDB
     #============================================#>
 
-    # $sqlInstance = 'txadbsazu001.database.windows.net'
-    # $sourcedbname = 'TIS_CMDB'
-    # $sqlcred = (Get-AzKeyVaultSecret -VaultName tisutility -Name 'testuser' | select Name), `
-    # (Get-AzKeyVaultSecret -VaultName tisutility -Name 'testuser').SecretValue
+    $sqlInstance = 'txadbsazu001.database.windows.net'
+    $sourcedbname = 'TIS_CMDB'
+    $SqlCredential = New-Object System.Management.Automation.PSCredential ('testuser', ((Get-AzKeyVaultSecret -vaultName "tisutility" -name 'testuser').SecretValue))
 
-    # try 
-    # {
-    #     $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $sqlcred `
-    #         -Query "(select * from dbo.AzureAvailableServers where [server name] = $VmName)"
+    try 
+    {
+        $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
+            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = "TXAINFAZU289"}
+            
+        if ($null -eq $connection)
+        {
+            $Validation.add([PSCustomObject]@{System = 'SQL'
+            Step = 'Validation'
+            SubStep = 'Server Name'
+            Status = 'Passed'
+            FriendlyError = ''
+            PsError = ''}) > $null 
+        }
+        else 
+        {
+            $Validation.add([PSCustomObject]@{System = 'SQL'
+            Step = 'Validation'
+            SubStep = 'Server Name'
+            Status = 'Failed'
+            FriendlyError = 'Please take the Server name out of the SQL DB'
+            PsError = $PSItem.Exception}) > $null 
+        }
+    }
+    catch 
+    {
+        $Validation.add([PSCustomObject]@{System = 'SQL'
+        Step = 'Authentication'
+        SubStep = 'Server Name'
+        Status = 'Failed'
+        FriendlyError = 'Could not login to SQL DB'
+        PsError = $PSItem.Exception}) > $null 
 
-    #     if ($null -eq $connection)
-    #     {
-    #         $Validation.add([PSCustomObject]@{System = 'SQL'
-    #         Step = 'Validation'
-    #         SubStep = 'Server Name'
-    #         Status = 'Passed'
-    #         FriendlyError = ''
-    #         PsError = ''}) > $null 
-    #     }
-    #     else 
-    #     {
-    #         $Validation.add([PSCustomObject]@{System = 'SQL'
-    #         Step = 'Validation'
-    #         SubStep = 'Server Name'
-    #         Status = 'Failed'
-    #         FriendlyError = 'Please take the Server name out of the SQL DB'
-    #         PsError = $PSItem.Exception}) > $null 
-    #     }
-    # }
-    # catch 
-    # {
-    #     $Validation.add([PSCustomObject]@{System = 'SQL'
-    #     Step = 'Authentication'
-    #     SubStep = 'Server Name'
-    #     Status = 'Failed'
-    #     FriendlyError = 'Could not login to SQL DB'
-    #     PsError = $PSItem.Exception}) > $null 
-
-    #     return $Validation
-    # }
+        return $Validation
+    }
 
     <#============================================
     Validate all steps were taken and passed
