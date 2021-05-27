@@ -30,19 +30,9 @@ Function Get-VMCheck
     )
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
-    <#============================================
-    Login to the VM
-    #============================================#>
 
     $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
-    
-    # This block will enable PS remoting into a server from the Azure Serial Console
-    # This needs to be enabled to bypass the issue with non domain joined servers
-    ######################################################################
-    # $remotecommand = "Enable-PSRemoting -Force"
-    # $Bytes = [System.Text.Encoding]::Unicode.GetBytes($remotecommand)
-    # $EncodedCommand = [Convert]::ToBase64String($Bytes)
-    # $EncodedCommand
+
     #$cred = (Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange' | select Name), `
      #(Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange').SecretValue
     
@@ -92,54 +82,6 @@ Function Get-VMCheck
 
         return $Validation
     }
-    
-    <#============================================
-    Run system updates
-    #============================================
-
-    Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Add_Trusted_Hosts.ps1"
-    #>
-        # try
-    # {
-    #     $trustedhosts = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-    #     -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Add_Trusted_Hosts.ps1"
-
-    #     $validatehosts = $trustedhosts.Value.message | convertfrom-csv
-
-    #     foreach ($host in $validatehosts)
-    #     {
-    #         if ($null -eq $trustedhosts.Value)
-    #         {
-    #             $Validation.add([PSCustomObject]@{System = 'Server'
-    #             Step = 'Validation'
-    #             SubStep = "TrustedHosts"
-    #             Status = 'Failed'
-    #             FriendlyError = 'The VM is not configured for non domain remoting'
-    #             PsError = $PSItem.Exception}) > $null 
-    #         }
-    #         else 
-    #         {
-    #             $Validation.add([PSCustomObject]@{System = 'Server'
-    #             Step = 'Validation'
-    #             SubStep = "TrustedHosts"
-    #             Status = 'Passed'
-    #             FriendlyError = ''
-    #             PsError = ''}) > $null 
-    #         }
-    #     }
-    # }   
-    # catch 
-    # {
-    #     $Validation.add([PSCustomObject]@{System = 'Server'
-    #     Step = 'Validation'
-    #     SubStep = "TrustedHosts"
-    #     Status = 'Failed'
-    #     FriendlyError = 'The VM is not configured for non domain remoting'
-    #     PsError = $PSItem.Exception}) > $null 
-
-    #     return $Validation
-    # }
      
     <#============================================
     Run system updates
@@ -200,7 +142,7 @@ Function Get-VMCheck
     try 
     {
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = "TXAINFAZU289"}
+            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = $VmObj.Name}
             
         if ($null -eq $connection)
         {
@@ -247,7 +189,10 @@ Function Get-VMCheck
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Microsoft Monitoring Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - McAfee Agent Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - SplunkForwarder Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'cccccccccccccccccc'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Tenable Nessus Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Updates'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+    [void]$ValidationPassed.add([PSCustomObject]@{System = 'SQL'; Step = 'Validation'; SubStep = 'Server Name'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
+
 
 
     if(!(Compare-Object $Validation $ValidationPassed))
