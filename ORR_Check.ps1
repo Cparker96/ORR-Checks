@@ -83,36 +83,14 @@ $AzCheck = @()
 $Credential = @()
 $VM = @()
 
-#get Server Build variables
-<#If(test-json -Json (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String) -Schema (Get-Content .\ORR_Checks\VM_Request_Fields.json | Out-String))
-{  
-	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
-  
-}else 
-{
-    Write-Error "Error with VM Request Input `r`n $error[0]" -ErrorAction Stop
-}#>
-$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields1.json | convertfrom-json -AsHashtable
 
-<#============================================
-Get credentials for all the diffrent systems
-#============================================#>
-$Credential = @()
-#connect with an account that can list the keys to the keyvault(Public cloud)
-# $VmRF.environment = 'AzureCloud'
-<#
-disconnect-azaccount
-connect-azaccount -Environment 'AzureCloud'
+$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
 
-#get App registrations to Read Public and Gov Clouds
-if($VmRF.Environment -eq 'AzureCloud')
+if(!$VmRF)
 {
-	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
+	Write-Error "Please cd to the directory where the VM_Request_Fields.json file is" -ErrorAction Stop
 }
-catch
-{
-	write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)"
-}
+
 <#============================================
 Check VM in Azure
 ============================================#>
@@ -170,4 +148,4 @@ $Solution = ($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck
 
 
 $filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
-$Solution | export-csv "c:\temp\$filename.csv"
+$Solution | export-csv "$filename.csv"

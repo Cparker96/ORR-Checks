@@ -82,7 +82,7 @@ Function Get-VMCheck
 
         return $Validation
     }
-     
+    
     <#============================================
     Run system updates
     #============================================#>
