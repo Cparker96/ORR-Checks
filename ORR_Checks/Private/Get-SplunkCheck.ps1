@@ -1,4 +1,4 @@
-$token = "bf14ae6c48f930507b88f8128b3ad0a5c9b3ca712df81863c4ae1d69ead4bc6b"
+$token = ""
 
 #$Credential= New-Object -TypeName System.Management.Automation.PSCredential `
 #-ArgumentList 'username',('password' | ConvertTo-SecureString -AsPlainText -Force)
