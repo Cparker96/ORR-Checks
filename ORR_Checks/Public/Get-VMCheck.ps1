@@ -32,9 +32,6 @@ Function Get-VMCheck
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
 
     $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
-
-    #$cred = (Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange' | select Name), `
-     #(Get-AzKeyVaultSecret -VaultName tisutility -Name 'tis-midrange').SecretValue
     
     <#==================================================
     Validate against services that should be running
@@ -82,13 +79,6 @@ Function Get-VMCheck
 
         return $Validation
     }
-    
-    <#============================================
-    Run system updates
-    #============================================#>
-    
-    $updates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Run_Updates.ps1"
 
     <#============================================
     Validate updates were executed
