@@ -1,15 +1,10 @@
 {
-    "Hostname" : "TXAIDCAZU801",
+    "Hostname" : "TXKAPPAZU814",
     "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "TIS-IAM1",
-    "Region" : "EastUS2",
-    "Virtual Network" : "Bla",
-    "Operating System" : "Windows Server 2016 Datacenter",
-    "Datavail Support" : "",
-    "Date Created" : "04/15/2020",
-    "Requestor" : "clarvin@textron.com",
-    "Approver" : "cparker@textron.com",
-    "Created By" : "clarvin@textron.com",
-    "Ticket Number" : "TASK0284785"
+    "Subscription" : "Kautex",
+    "Resource Group" : "Manu-PTC-Prod",
+    "Operating System" : "Windows Server 2019 Datacenter",
+    "Requestor" : "Christopher Morgan",
+    "Created By" : "Bethann Conner",
+    "Ticket Number" : "TASK0296635"
 }
