@@ -84,7 +84,7 @@ $Credential = @()
 $VM = @()
 
 
-$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
+$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
 
 if(!$VmRF)
 {
@@ -145,24 +145,21 @@ catch
 
 $output = ($VmRF | select Hostname,
 @{n='Business Unit'; e={$VmObj.Tags.BU}}, 
-Subscription,
-'Resource Group',
-@{n='Region'; e={$VmObj.Location}},
-@{n='Instance'; e={$VmObj.Tags.Instance}},
+@{n='Location'; e={$VmObj.Location}},
 @{n='Owner'; e={$VmObj.Tags.Owner}},
 @{n='Patch Group'; e={$VmObj.Tags."Patch Group"}},
-@{n='Purpose'; e={$VmObj.Tags.Purpose}},
+@{n='Application'; e={$VmObj.Tags.Purpose}},
 @{n='Service Level'; e={$VmObj.Tags."Service Level"}},
-@{n='Virtual Network'; e={((get-aznetworkInterface -resourceid  $VmObj.NetworkProfile.NetworkInterfaces.id).ipconfigurations.subnet.id).split('/')[8]}},
-'Operating System', # $vmobj.StorageProfile.osdisk.OsType
-@{n='Physical or Virtual Server'; e={'Virtual'}},
-'Datavail Support',
+@{n='Operating System'; e={"$($vmobj.StorageProfile.ImageReference.Offer)-$($vmobj.StorageProfile.ImageReference.sku)"}},
+@{n='Physical or Virtual Server' ; e={"Virtual"}},
+@{n='Network Information (IP)'; e={(get-aznetworkInterface -resourceid $VmObj.NetworkProfile.NetworkInterfaces.id).IPConfigurations.PrivateIpAddress}},
+'DNS record created (if any)',
+@{n='Disk Information'; e={"$($vmobj.storageprofile.datadisks.disksizegb) GB"}},
 @{n='Date Created'; e={get-date -format 'MM/dd/yyyy'}},
-Requestor,
+'Requestor',
 @{n='Approver'; e={(get-aduser $($env:UserName)).name}},
-"Created By",
-'Ticket Number' | fl) + (($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck | ft)
-
+'Created By',
+'Ticket Number')
 
 $filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 $output | Out-File "c:\temp\$filename.txt"
