@@ -142,17 +142,6 @@ catch
 	Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
 }
 
-<#============================================
-Check McAfee
-#============================================#>
-
-Get-McAfeeCheck
-
-
-
-<#============================================
-
-#============================================#>
 $Solution = ($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + $VmCheck
 
 
