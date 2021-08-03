@@ -17,7 +17,12 @@
 #>
 Function Get-ERPMOUCheck
 {
-    $erpm = Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITY' -VMName TXAINFAZU901 -CommandId 'RunPowerShellScript' `
+    Param
+    (
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
+    )
+
+    $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_ERPM_OU.ps1"
 
     $validateerpm = $erpm.Value.message

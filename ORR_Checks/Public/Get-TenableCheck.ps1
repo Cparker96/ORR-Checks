@@ -5,7 +5,7 @@
         This function authenticates into Tenable and validates that the Nessus Agent on a server is configured and 
         reporting into Tenable correctly.
     .PARAMETER Environment
-        The $VmName variable which pulls in metadata from the server 
+        The $VmObj variable which pulls in metadata from the server 
     .EXAMPLE
 
     .NOTES
@@ -19,10 +19,11 @@
 
 Function Get-TenableCheck
 {
-    # Param
-    # (
-    #     [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
-    # )
+    Param
+    (
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
+    )
+
     Connect-AzAccount -Environment AzureCloud
     Set-AzContext -Subscription Enterprise
 
@@ -48,7 +49,7 @@ Function Get-TenableCheck
     $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
     $agents2 = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).agents
 
-    $agentinfo = $agents1 + $agents2 | where {$_.name -eq 'TXAINFAZU999'}
+    $agentinfo = $agents1 + $agents2 | where {$_.name -eq $VmObj.Name}
 
     # if agent status is not online or initializing and not in weekly scans group
     if (($agentinfo.status -ne 'on') -or ($agentinfo.status -ne 'init') -and ($agentinfo.groups.name -notcontains 'WeeklyScans'))

@@ -5,7 +5,7 @@
     .DESCRIPTION
         This function logs into the VM and performs various validation checks on services, admin/admin groups, AD configuration, etc.
     .PARAMETER Environment
-        The $VmName variable which pulls in metadata from the server 
+        The $VmObj variable which pulls in metadata from the server 
     .EXAMPLE
         get-AzureCheck -VmName 'TXBMMLINKGCCT02' `
         -Environment AzureCloud `
