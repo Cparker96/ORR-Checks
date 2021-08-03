@@ -17,7 +17,12 @@
 #>
 Function Get-ERPMAdminsCheck
 {
-    $Admins = Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITY' -VMName TXAINFAZU901 -CommandId 'RunPowerShellScript' `
+    Param
+    (
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
+    )
+
+    $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_ERPM_Admins.ps1"
 
     $checkadmins = $Admins.Value.message | ConvertFrom-Csv

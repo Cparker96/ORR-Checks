@@ -17,12 +17,12 @@
 #>
 Function Get-McAfeeCheck
 {
-    # Param
-    # (
-    #     [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
-    # )
+    Param
+    (
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
+    )
 
-    $mcafee = Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITY' -VMName TXAINFAZU901 -CommandId 'RunPowerShellScript' `
+    $mcafee = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_McAfee.ps1"
 
     $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
@@ -32,7 +32,7 @@ Function Get-McAfeeCheck
     $cutofftime = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).AddHours(-6).ToString("yyyyMMddHHmmss")
 
     # need to validate that not only the agent is installed, need Endpoint Security, Firewall, etc.
-    $programs = Invoke-AzVMRunCommand -ResourceGroupName 'TIS-UTILITY' -VMName TXAINFAZU901 -CommandId 'RunPowerShellScript' `
+    $programs = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
     -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_McAfee_ProgramCount.ps1"
 
     $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
