@@ -22,7 +22,7 @@ Function Get-ERPMAdminsCheck
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
 
-    $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+    $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
     -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_ERPM_Admins.ps1"
 
     $checkadmins = $Admins.Value.message | ConvertFrom-Csv
@@ -33,4 +33,6 @@ Function Get-ERPMAdminsCheck
     } else {
         Write-Host "This server is configured for the ERPM Admins" -ForegroundColor Green
     }
+
+    return $checkadmins.Name
 }

@@ -24,9 +24,6 @@ Function Get-TenableCheck
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
 
-    Connect-AzAccount -Environment AzureCloud
-    Set-AzContext -Subscription Enterprise
-
     $agents1 = [System.Collections.ArrayList]@()
     $agents2 = [System.Collections.ArrayList]@()
     $agentinfo = [System.Collections.ArrayList]@()
@@ -58,6 +55,8 @@ Function Get-TenableCheck
     } else {
         Write-Host "Server is configured for Tenable" -ForegroundColor Green
     }
+
+    return $agentinfo.status, $agentinfo.groups.name
 }
 
 Function TenableScan

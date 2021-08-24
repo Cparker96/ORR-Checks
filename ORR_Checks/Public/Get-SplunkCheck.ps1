@@ -17,11 +17,12 @@
 #>
 function New-SplunkSearch
 {
+    $cred = Get-Credential
     param(
-            [PSCredential] $Credential,
+            [PSCredential] $cred,
             $search,
             $searchMode = 'Fast', #smart
-            $splunkBaseUrl = "https://splunk.textron.com:8089"
+            $splunkBaseUrl = "https://splk.textron.com:8089"
         )
 
     $url = $splunkBaseUrl +"/services/search/jobs"
@@ -42,9 +43,9 @@ function New-SplunkSearch
 function Get-SplunkSearchIsDone
 {
     param(
-            [PSCredential] $Credential,
+            [PSCredential] $cred,
             $sid,
-            $splunkBaseUrl = "https://splunk.textron.com:8089"
+            $splunkBaseUrl = "https://splk.textron.com:8089"
         )
 
     $url = $splunkBaseUrl +"/services/search/jobs/$sid"
@@ -66,9 +67,9 @@ function Get-SplunkSearchIsDone
 function Get-SplunkSearchStatus
 {
     param(
-            [PSCredential] $Credential,
+            [PSCredential] $cred,
             $sid,
-            $splunkBaseUrl = "https://splunk.textron.com:8089"
+            $splunkBaseUrl = "https://splk.textron.com:8089"
         )
 
     $keys = @('eventCount', 'diskUsage', 'doneProgress', 'dispatchState', 'isDone','isFailed', 'isFinalized', 'resultCount')
@@ -87,11 +88,11 @@ function Get-SplunkSearchStatus
 function Get-SplunkSearchResults
 {
     param(
-            [PSCredential] $Credential,
+            [PSCredential] $cred,
             $sid,
             $outputMode = 'json', #JSON CSV XML
             $pageSize = (Get-Setting 'splunkPageSize'),
-            $splunkBaseUrl = "https://splunk.textron.com:8089"
+            $splunkBaseUrl = "https://splk.textron.com:8089"
         )
 
     $url = $splunkBaseUrl +"/services/search/jobs/$sid/results/"
@@ -147,10 +148,9 @@ function Disable-CertCheck
 Function Get-SplunkCheck
 {
     Disable-CertCheck
-    $cred = Get-Credential
 
     try {
-        $searchsid = New-SplunkSearch -Credential $cred -search "search index=win* host=TXAINFAZU027 | head 1" 
+        $searchsid = New-SplunkSearch -Credential $cred -search "search index=win* host=TXAINFAZU901 | head 1" 
     }
     catch {
         $e = $_.Exception
@@ -158,7 +158,7 @@ Function Get-SplunkCheck
 
     $results = Get-SplunkSearchResults -Credential $cred -sid $searchsid -pageSize 100
 
-    if (($results.host -ne 'TXAINFAZU027') -and ($results.index -ne 'win_event'))
+    if (($results.host -ne 'TXAINFAZU901') -and ($results.index -ne 'win_event'))
     {
         Write-Host "Invalid log entry. Please check again" -ErrorAction Stop -ForegroundColor Red
     } else {
