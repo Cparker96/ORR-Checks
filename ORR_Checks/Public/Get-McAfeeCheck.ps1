@@ -37,7 +37,7 @@ Function Get-McAfeeCheck
 
     $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
-    # check to see if last reported in date is greater than 6 hrs - if so, we gotta problem
+    # check to see if last reported in date is greater than 6 hrs - if so, we got a problem
     if ($lastreportdate -lt $cutofftime)
     {
         Write-Host "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security" -ErrorAction Stop -ForegroundColor Red
@@ -45,6 +45,9 @@ Function Get-McAfeeCheck
         Write-Host "One or more parts of McAfee are missing. Please install all parts" -ErrorAction Stop -ForegroundColor Red
     } else {
         Write-Host "This server is configured for McAfee" -ForegroundColor Green
+        $convertedbackdate = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).ToString("yyyy-MM-dd HH:mm:ss")
     }
+
+    return $mcafeeprograms, $convertedbackdate
 }
 

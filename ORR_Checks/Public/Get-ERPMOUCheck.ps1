@@ -33,4 +33,6 @@ Function Get-ERPMOUCheck
     } else {
         Write-Host "This server is configured for its OU in ERPM" -ForegroundColor Green
     }
+
+    return $validateerpm
 }
