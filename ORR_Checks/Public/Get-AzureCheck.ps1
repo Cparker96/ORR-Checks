@@ -29,8 +29,7 @@ Function Get-AzureCheck{
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
         [parameter(Position=3, Mandatory=$false)] [String] $Region,
-        [parameter(Position=3, Mandatory=$false)] [String] $Network,
-        [parameter(Position=2, Mandatory=$false)] [PSCredential] $Credential
+        [parameter(Position=3, Mandatory=$false)] [String] $Network
         )
 
     [System.Collections.ArrayList]$Validation = @()
@@ -52,15 +51,11 @@ Function Get-AzureCheck{
     if($Environment -eq 'AzureCloud'){$tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'}
     else{$tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'}
     
-    #disconnect with individual access and log in with app registration
+    #disconnect previous connections and log in with individual access
     Try{
         disconnect-AzAccount > $null
-        if(!$Credential){
-            connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
-        }
-        else{
-            connect-AzAccount -ServicePrincipal -Environment $Environment -Credential $Credential -tenant $tenant -ErrorAction Stop -WarningAction Ignore > $null  
-        }
+        
+        connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
     }
     Catch{
         $Validation.add([PSCustomObject]@{System = 'Azure'

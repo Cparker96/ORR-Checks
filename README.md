@@ -2,6 +2,10 @@
 An Automation of VM Operational Readiness Review found here:
 https://ontextron.sharepoint.com/:w:/r/sites/TISMidrange/_layouts/15/Doc.aspx?sourcedoc=%7BF83F80DE-EC6B-40D4-8994-309E7A6F6FC6%7D&file=Azure%20Server%20Delivery%20Packet.dotx&action=default&mobileredirect=true
 
+# Access Requirements
+    Your Azure Contributor role Must be checked out over the scope of the VM you are running the ORR on
+    You must have 
+
 # Module Requirements
  Powershell -  Version Min "7.1.2"
  Azure Module "AZ" - Version Min "5.5.0"

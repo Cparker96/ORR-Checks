@@ -22,17 +22,44 @@ Function Get-ERPMAdminsCheck
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
 
-    $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
-    -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_ERPM_Admins.ps1"
+    Try{
+        $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
+        -ScriptPath .\ORR_Checks\Private\Validate_ERPM_Admins.ps1 -ErrorAction Stop
+        #"$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins.ps1"
+        #.\ORR_Checks\Private\Validate_ERPM_Admins.ps1
 
-    $checkadmins = $Admins.Value.message | ConvertFrom-Csv
+        $checkadmins = $Admins.Value.message | ConvertFrom-Csv 
+        
+            #look at the groups and determine if they meet the criteria   
+            if (($checkadmins.Name -notcontains 'TXT\ADM_SRV_AZU') -or ($checkadmins.Name -notcontains 'TXT\svc_hq_erpm_svc'))
+            {
+                $validation = [PSCustomObject]@{System = 'ERPM'
+                Step = 'ERPMCheck'
+                SubStep = 'ERPM Admins'
+                Status = 'Failed'
+                FriendlyError = 'This server does not have the configured admins'
+                PsError = ''} 
+            } else {
+                $validation = [PSCustomObject]@{System = 'ERPM'
+                Step = 'ERPMCheck'
+                SubStep = 'ERPM Admins'
+                Status = 'Passes'
+                FriendlyError = 'This server is configured for the ERPM Admins'
+                PsError = ''} 
+            }
+        
+    
+    }Catch{
+        $validation = [PSCustomObject]@{System = 'VM'
+        Step = 'ERPMCheck'
+        SubStep = 'ERPM Admins'
+        Status = 'Failed'
+        FriendlyError = 'Failed to run ERPM Checks on the server'
+        PsError = "$PSItem.Exception" } 
 
-    if (($checkadmins.Name -notcontains 'TXT\ADM_SRV_AZU') -or ($checkadmins.Name -notcontains 'TXT\svc_hq_erpm_svc'))
-    {
-        Write-Host "This server does not have the configured admins" -ErrorAction Stop -ForegroundColor Red
-    } else {
-        Write-Host "This server is configured for the ERPM Admins" -ForegroundColor Green
+        return $validation
     }
+    
 
-    return $checkadmins.Name
+    return ($validation, $checkadmins.Name)
 }

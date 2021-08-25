@@ -13,7 +13,6 @@
         Date Coded      : 07/8/2021
         Modified by     : 
         Date Modified   : 
-
 #>
 Function Get-McAfeeCheck
 {
@@ -21,33 +20,84 @@ Function Get-McAfeeCheck
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+    [System.Collections.ArrayList]$Validation = @()
 
-    $mcafee = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-    -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_McAfee.ps1"
+    <#==================================================
+    Validate services that should be running
+    #===================================================#>
+    Try{
+        # need to validate that not only the agent is installed, need Endpoint Security, Firewall, etc.
+        $programs = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_McAfee_ProgramCount.ps1"
 
-    $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
+        $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
-    # get the date of the last reported date in McAfee - convert to datetime, subtract 6 hrs - then convert back to string
-    $lastreportdate = $validatemcafee[11].'Component: McAfee Agent '.Trim('LastASCTime: ')
-    $cutofftime = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).AddHours(-6).ToString("yyyyMMddHHmmss")
+        if ($mcafeeprograms.Count -lt 4) {
+            $validation.Add([PSCustomObject]@{System = 'Server'
+            Step = 'McAfeeCheck'
+            SubStep = 'Agent Configuration'
+            Status = 'Failed'
+            FriendlyError = "One or more parts of McAfee are missing. Please install all parts"
+            PsError = ''}) > $null
+        }else{
+            $validation.Add([PSCustomObject]@{System = 'Server'
+            Step = 'McAfeeCheck'
+            SubStep = 'Agent Configuration'
+            Status = 'Passed'
+            FriendlyError = ""
+            PsError = ''}) > $null
+        }
+    }Catch{
+        $Validation.add([PSCustomObject]@{System = 'Server'
+        Step = 'McAfeeCheck'
+        SubStep = "Agent Configuration"
+        Status = 'Failed'
+        FriendlyError = 'Check to make sure you have the package installed.'
+        PsError = $PSItem.Exception}) > $null 
 
-    # need to validate that not only the agent is installed, need Endpoint Security, Firewall, etc.
-    $programs = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-    -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_McAfee_ProgramCount.ps1"
-
-    $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
-
-    # check to see if last reported in date is greater than 6 hrs - if so, we got a problem
-    if ($lastreportdate -lt $cutofftime)
-    {
-        Write-Host "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security" -ErrorAction Stop -ForegroundColor Red
-    } elseif ($mcafeeprograms.Count -lt 4) {
-        Write-Host "One or more parts of McAfee are missing. Please install all parts" -ErrorAction Stop -ForegroundColor Red
-    } else {
-        Write-Host "This server is configured for McAfee" -ForegroundColor Green
-        $convertedbackdate = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).ToString("yyyy-MM-dd HH:mm:ss")
+        return $Validation
     }
 
-    return $mcafeeprograms, $convertedbackdate
+    Try{
+        $mcafee = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_McAfee.ps1"
+
+        $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
+
+        # get the date of the last reported date in McAfee - convert to datetime, subtract 6 hrs - then convert back to string
+        $lastreportdate = $validatemcafee[11].'Component: McAfee Agent '.Trim('LastASCTime: ')
+        $cutofftime = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).AddHours(-6).ToString("yyyyMMddHHmmss")
+        
+        $convertedbackdate = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).ToString("yyyy-MM-dd HH:mm:ss")
+
+        # check to see if last reported in date is greater than 6 hrs - if so, we got a problem
+        if ($lastreportdate -lt $cutofftime)
+        {
+            $validation.Add([PSCustomObject]@{System = 'Server'
+            Step = 'McAfeeCheck'
+            SubStep = 'Check in Time'
+            Status = 'Failed'
+            FriendlyError = "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security""This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security"
+            PsError = ''}) > $null
+        }else {
+            $validation.Add([PSCustomObject]@{System = 'Server'
+            Step = 'McAfeeCheck'
+            SubStep = 'Check in Time'
+            Status = 'Passed'
+            FriendlyError = ""
+            PsError = ''}) > $null
+        }
+    }catch{
+        $Validation.add([PSCustomObject]@{System = 'Server'
+        Step = 'McAfeeCheck'
+        SubStep = "Check in Time"
+        Status = 'Failed'
+        FriendlyError = 'Check to make sure you have the package installed.'
+        PsError = $PSItem.Exception}) > $null 
+
+        return $Validation
+    }
+
+    return ($Validation, $mcafeeprograms.name, $convertedbackdate)
 }
 

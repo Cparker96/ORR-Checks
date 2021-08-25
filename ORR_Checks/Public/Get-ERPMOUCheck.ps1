@@ -21,18 +21,41 @@ Function Get-ERPMOUCheck
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+    Try{
+        $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
+        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
+    
+        $validateerpm = $erpm.Value.message
 
-    $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-    -ScriptPath ".\ORR_Checks\ORR_Checks\Private\Validate_ERPM_OU.ps1"
+        if ($null -eq $validateerpm)
+        {
+            $validation = [PSCustomObject]@{System = 'Server'
+            Step = 'ERPMCheck'
+            SubStep = 'ActiveDirectory OU'
+            Status = 'Failed'
+            FriendlyError = 'The Server Does not have an OU associated in AD'
+            PsError = ''}         
+        } 
+            else {
+                $validation = [PSCustomObject]@{System = 'Server'
+                Step = 'ERPMCheck'
+                SubStep = 'ActiveDirectory OU'
+                Status = 'Passed'
+                FriendlyError = ''
+                PsError = '' }
+        }
 
-    $validateerpm = $erpm.Value.message
+    }
+    Catch{
+        $validation = [PSCustomObject]@{System = 'Server'
+        Step = 'ERPMCheck'
+        SubStep = 'ActiveDirectory OU'
+        Status = 'Failed'
+        FriendlyError = 'Failed to run ERPM Checks on the server'
+        PsError = "$PSItem.Exception" }
 
-    if ($null -eq $validateerpm)
-    {
-        Write-Host "This server does not have an associated OU path in AD" -ErrorAction Stop -ForegroundColor Red
-    } else {
-        Write-Host "This server is configured for its OU in ERPM" -ForegroundColor Green
+        return $validation
     }
 
-    return $validateerpm
+    return ($validation, $validateerpm) 
 }

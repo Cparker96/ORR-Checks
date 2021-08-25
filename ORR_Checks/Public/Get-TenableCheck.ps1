@@ -21,16 +21,16 @@ Function Get-TenableCheck
 {
     Param
     (
-        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj,
+        [parameter(Position = 1, Mandatory=$true)] [String] $AccessKey,
+        [parameter(Position = 2, Mandatory=$true)] [String] $SecretKey
     )
 
     $agents1 = [System.Collections.ArrayList]@()
     $agents2 = [System.Collections.ArrayList]@()
     $agentinfo = [System.Collections.ArrayList]@()
 
-    # get my API keys from the key vault, need to use these in the headers var but don't know the syntax
-    $accessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'TenableAccessKey' -AsPlainText
-    $secretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'TenableSecretKey' -AsPlainText
+
     
     # grab the agents in the agent group 'WeeklyScans' details
     $headers = $null
@@ -59,8 +59,13 @@ Function Get-TenableCheck
     return $agentinfo.status, $agentinfo.groups.name
 }
 
-Function TenableScan
+Function Scan-Tenable
 {
+    Param
+    (
+        [parameter(Position = 1, Mandatory=$true)] [String] $AccessKey,
+        [parameter(Position = 2, Mandatory=$true)] [String] $SecretKey
+    )
     # list all AzureOnBoarding scan info
     $headers = $null
     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"

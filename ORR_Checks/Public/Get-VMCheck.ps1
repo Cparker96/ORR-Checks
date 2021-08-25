@@ -26,8 +26,9 @@ Function Get-VMCheck
 {
     Param
     (
-        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
-    )
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj,
+        [parameter(Position = 1, Mandatory=$true)] $SqlCredential
+        )
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
 
@@ -86,7 +87,7 @@ Function Get-VMCheck
     try 
     {
         $validateupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "C:\Users\cparke06\Documents\ORR_Checks\ORR_Checks\Private\Validate_Updates.ps1"
+        -ScriptPath "$ScriptPath\Validate_Updates.ps1"
         
         $updatelist = $validateupdates.Value.message | ConvertFrom-Csv
 
@@ -127,7 +128,6 @@ Function Get-VMCheck
 
     $sqlInstance = 'txadbsazu001.database.windows.net'
     $sourcedbname = 'TIS_CMDB'
-    $SqlCredential = New-Object System.Management.Automation.PSCredential ('testuser', ((Get-AzKeyVaultSecret -vaultName "tisutility" -name 'testuser').SecretValue))
 
     try 
     {
