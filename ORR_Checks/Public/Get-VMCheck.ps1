@@ -135,7 +135,7 @@ Function Get-VMCheck
     try 
     {        
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = $VmObj.Name} -EnableException
+            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
  
         if ($null -eq $connection)
         {
