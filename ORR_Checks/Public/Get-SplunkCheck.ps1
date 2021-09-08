@@ -1,169 +1,115 @@
-<#
-    .SYNOPSIS
-        Validate that a server is configured for sending logs to splunk
-    .DESCRIPTION
-        This function authenticates into Splunk and validates that a server outputting logs to the splunk forwarders and indexes
-    .PARAMETER Environment
-        The $VmObj variable which pulls in metadata from the server 
-    .EXAMPLE
-
-    .NOTES
-        FunctionName    : Get-SplunkCheck
-        Created by      : Cody Parker
-        Date Coded      : 05/21/2021
-        Modified by     : 
-        Date Modified   : 
-
-#>
-
-function New-SplunkSearch
+$Url = "https://splk.textron.com:8089"
+function Splunk-Auth
 {
-    $cred = Get-Credential
-    param(
-            [PSCredential] $cred,
-            $search,
-            $searchMode = 'Fast', 
-            $splunkBaseUrl = 'https://splk.textron.com:8089'
+    [CmdletBinding()]
+
+    Param
+    (
+        [Parameter(Mandatory=$true)]        
+        [Uri]$Url
     )
 
-    $url = $splunkBaseUrl +"/services/search/jobs"
-
-    
-
-    $parameters = @{
-                    'rf' = '*'
-                    'search' = $search
-                    'adhoc_search_level' = 'fast'
-               }
-
-    $result = Invoke-RestMethod -Uri $url -Credential $cred -Body $parameters -Method POST
-
-    return $result.response.sid
-}
-
-function Get-SplunkSearchIsDone
-{
-    param(
-            [PSCredential] $cred,
-            $sid,
-            $splunkBaseUrl = "https://splk.textron.com:8089"
-        )
-
-    $url = $splunkBaseUrl +"/services/search/jobs/$sid"
-
-    $result = Invoke-RestMethod -Uri $url -Credential $cred
-
-    $isDone = $result.entry.content.dict.key | where {$_.name -eq "isDone"}
-
-    if($isDone.'#text' -eq '1')
-    {
-        return $true;
-    }
-    else
-    {
-        $false;
-    }
-}
-
-function Get-SplunkSearchStatus
-{
-    param(
-            [PSCredential] $cred,
-            $sid,
-            $splunkBaseUrl = "https://splk.textron.com:8089"
-        )
-
-    $keys = @('eventCount', 'diskUsage', 'doneProgress', 'dispatchState', 'isDone','isFailed', 'isFinalized', 'resultCount')
-
-    $url = $splunkBaseUrl +"/services/search/jobs/$sid"
-
-    $parameters = @{
-                    'output_mode' = 'json'
-                    }
-
-    $result = Invoke-RestMethod -Uri $url -Credential $cred -Method Get -Body $parameters
-
-    return $result.entry.content | select $keys
-}
-
-function Get-SplunkSearchResults
-{
-    param(
-            [PSCredential] $cred,
-            $sid,
-            $outputMode = 'json', #JSON CSV XML
-            $pageSize = (Get-Setting 'splunkPageSize'),
-            $splunkBaseUrl = "https://splk.textron.com:8089"
-        )
-
-    $url = $splunkBaseUrl +"/services/search/jobs/$sid/results/"
-
-
-    $status = Get-SplunkSearchStatus -Credential $cred -sid $sid -splunkBaseUrl $splunkBaseURL
-    $totalResults = $status.resultCount
-
-    $results = @()
-
-    for($offset = 0; $offset -lt $totalResults; $offset += $pageSize)
-    {
-        write-host ("Getting {0} of {1}" -f $offset, $totalResults)
-
-        $parameters = @{
-                    'output_mode' = $outputMode
-                    'count' = $pageSize
-                    'offset' = $offset
-                    #'count' = 1000
-               }
-
-        $result = Invoke-RestMethod -Uri $url -Credential $cred -Body $parameters -Method GET
-        $results += $result.results
+    $Headers = @{
+        'username'='svc_tis_midrange'
+        'password'='slope-VARIES-apparent-DENMARK-cafe-14225'
     }
 
-    return $results
-}
-
-
-function Disable-CertCheck
-{
-    #something is wrong with the https cert..... should look into that
-    #The cert is missing the a san for the host name splunk.textron.com
-    if ($PSVersionTable.PSEdition -eq 'Core')
-    {
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
-    } else {
-            add-type @"
-        using System.Net;
-        using System.Security.Cryptography.X509Certificates;
-        public class TrustAllCertsPolicy : ICertificatePolicy {
-            public bool CheckValidationResult(
-                ServicePoint srvPoint, X509Certificate certificate,
-                WebRequest request, int certificateProblem) {
-                return true;
-            }
-        }
-"@
-    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy 
-    }
-}
-
-Function Get-SplunkCheck
-{
-    Disable-CertCheck
+    $Loginurl = $url.AbsoluteUri + "services/auth/login"
+    [regex]$sessionKey = "(?<=<sessionKey>)(.*)(?=<\/sessionKey>)"
 
     try {
-        $searchsid = New-SplunkSearch -Credential $cred -search "search index=win* host=TXAINFAZU901 | head 1" 
+    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body ($Headers) -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
     }
     catch {
-        $e = $_.Exception
+    return $Error[0].Exception
     }
 
-    $results = Get-SplunkSearchResults -Credential $cred -sid $searchsid -pageSize 100
+    if($Content) {
+    #the purpose of "$script:Key" is to make the $Key variable available to be used dynamically with other functions
+    $script:Key = "Splunk " + $sessionKey.Match($content).Value
+    }
+    if (!$Content -OR !$Key) {
+    return "Error. No valid key returned by $Loginurl"
+    }
+    return $Key
+}
+function Splunk-Search 
+{      
+    [CmdletBinding()]
 
-    if (($results.host -ne 'TXAINFAZU901') -and ($results.index -ne 'win_event'))
+    Param
+    (
+        [Parameter(Mandatory=$true)]
+        [Uri]$Url,
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]$Key
+    )
+
+    $Searchstring = "search index=win_event* host=txainfazu901 earliest=-60m | head 1"
+    $Searchurl = $url.AbsoluteUri + "services/search/jobs"
+    [regex]$Jobsid = "(?<=<sid>)(.*)(?=<\/sid>)"
+
+    $onehourago = (Get-Date).AddHours(-1)
+    $rightnow = Get-Date
+    $startdate = [int64](($onehourago.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
+    $enddate = [int64](($rightnow.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
+
+    $Auth = @{'Authorization'=$Key}
+    $Body = @{
+        'search' = $Searchstring
+        'earliest_time' = $startdate
+        'latest_time' = $enddate
+    }
+    
+    try 
     {
-        Write-Host "Invalid log entry. Please check again" -ErrorAction Stop -ForegroundColor Red
+        $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
+    }
+    catch 
+    {
+        return $Error[0].Exception
+    }
+        
+    if($Content) {
+    $script:Sid = $Jobsid.Match($Content).Value.ToString()
+    }
+    if (!$Content -OR !$Sid) {
+    return "Error. No valid sid returned by $Searchurl"
+    }
+    return $Sid
+}
+
+function Splunk-Result 
+{
+    [CmdletBinding()]
+
+    Param
+    (
+        [Parameter(Mandatory=$true)]
+        [Uri]$Url,
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]$Key,
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [string]$Sid
+    )
+
+    $JobResultUrl = $Url.AbsoluteUri + ("services/search/jobs/{0}/results?output_mode=json&count=0" -f $Sid)
+
+    $Auth = @{'Authorization'=$Key}
+
+    try {
+    $Content = (Invoke-WebRequest -uri $JobResultUrl -Method Get -Headers $Auth -UseBasicParsing -ErrorAction Stop).content
+    }
+    catch {
+    return $Error[0].Exception
+    }
+
+    if($Content) {
+    return ($Content | ConvertFrom-Json).results
     } else {
-        Write-Host "This server is configured for Splunk logging" -ForegroundColor Green 
+    "Error. No valid jobstate returned by $($JobResultUrl)"
     }
 }
-#>
