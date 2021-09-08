@@ -86,29 +86,30 @@ $validateErpmAdmins = @()
 $validateMcafee = @()
 $validateTenable = @()
 $tennableVulnerabilities = @()
-$Cred = @()
+$SqlCredential = @()
 
 #get Server Build variables from VM_Request_Fields.json
 Try
 {
-	$VmRF = Get-Content .\ORR_Checks\VM_Request_Fields.json | convertfrom-json -AsHashtable
+	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
 }
-catch{ write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)"}
+catch{ write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)" -erroraction stop }
 
 <#============================================
 Get Credentials
 #============================================#>
 Try{
 	#connect to Public azure and make sure the context is Enterprise where the keyvault exists
+	disconnect-azaccount > $null
 	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' > $null
 	Set-AzContext -Subscription 'Enterprise' > $null
 
-	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'TenableAccessKey' -AsPlainText > $null
-	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'TenableSecretKey' -AsPlainText > $null
-    $SqlCredential = New-Object System.Management.Automation.PSCredential ('testuser', ((Get-AzKeyVaultSecret -vaultName "tisutility" -name 'testuser').SecretValue))
+	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey' -AsPlainText 
+	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey' -AsPlainText 
+    $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
 }
 Catch{
-
+	Write-Error "could not get keys from key vault" -ErrorAction Stop
 }
 
 <#============================================
@@ -126,16 +127,7 @@ Check VM in Azure
 	-ResourceGroup $VmRF.'Resource Group' 
 
 	#seperate the VM object from the azCheck object
-	try{
-		$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
-		foreach($step in $azcheck.PsError)
-		{
-			if($step -ne ''){	throw $step.PsError}
-		}
-	}
-	catch{
-		Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" -erroraction Stop
-	}
+	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
 
 
 <#============================================
@@ -145,39 +137,17 @@ Log into VM and do pre domain join checks
 
 	write-host "Validating VM is set up for Domain Checks"
 
-	if($null -ne $vmobj.OSProfile.WindowsConfiguration) #if a windows server
+	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
 	{
 		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential
 	}
-	elseif($null -ne $vmobj.OSProfile.LinuxConfiguration) #if a Linux server
+	elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
 	{
 		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
 	}
-
-
-	try{
-		foreach($step in $VmCheck.PsError)
-		{
-			if($step -ne ''){ throw $step.PsError}
-		}
+	else{
+		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
-	catch
-	{
-		Write-error "VM Checks Failed to Authenticate `r`n$($VmCheck.FriendlyError)" 
-	}
-
-<#============================================
-#
-#
-#  Assumes Server is Joined to the domain if windows
-#
-#
-#============================================#>
-	if($null -ne $vmobj.OSProfile.WindowsConfiguration) #if a windows server
-	{
-		
-	}
-
 
 
 <#============================================
@@ -206,8 +176,6 @@ Check Security controls
 	write-host "Validating McAfee"
 
 	$validateMcafee = Get-McAfeeCheck -vmobj $VmObj 
-
-
 
 	<#============================================
 	Splunk
@@ -252,6 +220,7 @@ Check Security controls
 <#============================================
 Formulate Output
 #============================================#>
+
 	$output = ($VmRF | select Hostname,
 	@{n='Business Unit'; e={$VmObj.Tags.BU}}, 
 	Subscription,
@@ -270,15 +239,31 @@ Formulate Output
 	Requestor,
 	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
 	"Created By",
-	'Ticket Number' | fl) + 
-	(($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	($VmCheck | ft) + $validateErpm[0] + 
+	'Ticket Number' | fl) 
+
+	#Validation Steps and Status
+	$Validation = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
+	$VmCheck + 
+	$validateErpm[0] + 
 	$validateErpmAdmins[0] + 
 	$validateMcafee[0] + 
-	$SplunkCheck[0] + 
 	$validateMcafee[0] + 
-	$validateTenable[0])
+	$validateTenable[0] ) 
 
+	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
+	#+ $tennableVulnerabilities
+	# $SplunkCheck[0] + 
+
+	if($null -ne $validation.PsError){
+		$output += $validation.PsError
+	}
+
+	<#print the output of the scans
+	foreach($object in $Validation){
+		[]
+		if($object.length -gt 1)
+		$output += $object | where 
+	}#>
 
 	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 	$output | Out-File "c:\temp\$filename.txt"

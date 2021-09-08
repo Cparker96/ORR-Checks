@@ -32,7 +32,10 @@ Function Get-VMCheck
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
 
-    $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
+    $sqlInstance = 'txadbsazu001.database.windows.net'
+    $sourcedbname = 'TIS_CMDB'
+
+   
     
     <#==================================================
     Validate against services that should be running
@@ -40,6 +43,8 @@ Function Get-VMCheck
 
     Try 
     {
+        $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
+
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
         $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
             -ScriptPath "$ScriptPath\Service_Checks.ps1" -ErrorAction Stop
@@ -87,11 +92,11 @@ Function Get-VMCheck
     try 
     {
         $validateupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$ScriptPath\Validate_Updates.ps1"
+        -ScriptPath "$ScriptPath\Validate_Updates.ps1" -ErrorAction Stop
         
-        $updatelist = $validateupdates.Value.message | ConvertFrom-Csv
+        $updatelist = $validateupdates.Value.message | ConvertFrom-Csv 
 
-        if ($null -ne $updatelist)
+        if ($null -eq $updatelist)
         {
             $Validation.add([PSCustomObject]@{System = 'Server'
             Step = 'Validation'
@@ -126,14 +131,12 @@ Function Get-VMCheck
     Take hostname out of TIS_CMDB
     #============================================#>
 
-    $sqlInstance = 'txadbsazu001.database.windows.net'
-    $sourcedbname = 'TIS_CMDB'
 
     try 
-    {
+    {        
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = $VmObj.Name}
-            
+            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{ Name = $VmObj.Name} -EnableException
+ 
         if ($null -eq $connection)
         {
             $Validation.add([PSCustomObject]@{System = 'SQL'
@@ -156,7 +159,7 @@ Function Get-VMCheck
     catch 
     {
         $Validation.add([PSCustomObject]@{System = 'SQL'
-        Step = 'Authentication'
+        Step = 'Validation'
         SubStep = 'Server Name'
         Status = 'Failed'
         FriendlyError = 'Could not login to SQL DB'
@@ -173,7 +176,7 @@ Function Get-VMCheck
     Validation        Services - McAfee Agent Service
     Validation        Services - SplunkForwarder Service
     Validation        Services - Tenable Nessus Agent
-    #============================================#>
+    #============================================
   
     [System.Collections.ArrayList]$ValidationPassed = @()
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Microsoft Monitoring Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
@@ -202,10 +205,10 @@ Function Get-VMCheck
                         Status = 'Failed'
                         FriendlyError = ""
                         PsError = ''}) > $null
-    }
+    }#>
 
 
-    return $Validation
+    return ($Validation, $services, $updatelist)
 }
 
 
