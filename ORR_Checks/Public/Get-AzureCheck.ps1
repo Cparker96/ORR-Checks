@@ -62,11 +62,11 @@ Function Get-AzureCheck{
                         Step = 'Authentication'
                         SubStep = 'Login'
                         Status = 'Failed'
-                        FriendlyError = "Could not log in with App registration"
+                        FriendlyError = "Could not log in to Azure"
                         PsError = $PSItem.Exception}) > $null
 
         # return the $validation object
-        return ($Validation, $VM)
+        return ($Validation)
     }
 
     $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -199,7 +199,7 @@ Function Get-AzureCheck{
     Authentication    VM
     Validation        TagsSyntax
     Validation        TagsValue
-    #============================================#>
+    #============================================
     [System.Collections.ArrayList]$ValidationPassed = @()
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Login'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
     [void]$ValidationPassed.add([PSCustomObject]@{System = 'Azure'; Step = 'Authentication'; SubStep = 'Context'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
@@ -224,7 +224,7 @@ Function Get-AzureCheck{
                         Status = 'Failed'
                         FriendlyError = ""
                         PsError = ''}) > $null
-    }
+    }#>
 
     return ($Validation, $VM)
 }

@@ -77,7 +77,7 @@ Function Get-McAfeeCheck
             Step = 'McAfeeCheck'
             SubStep = 'Check in Time'
             Status = 'Failed'
-            FriendlyError = "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security""This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security"
+            FriendlyError = "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security"
             PsError = ''}) > $null
         }else {
             $validation.Add([PSCustomObject]@{System = 'Server'
@@ -92,8 +92,8 @@ Function Get-McAfeeCheck
         Step = 'McAfeeCheck'
         SubStep = "Check in Time"
         Status = 'Failed'
-        FriendlyError = 'Check to make sure you have the package installed.'
-        PsError = $PSItem.Exception}) > $null 
+        FriendlyError = 'Failed to Report in Please reconfigure or contact Security.'
+        PsError = ''}) > $null 
 
         return $Validation
     }

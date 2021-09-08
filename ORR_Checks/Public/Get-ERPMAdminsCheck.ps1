@@ -24,7 +24,7 @@ Function Get-ERPMAdminsCheck
 
     Try{
         $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
-        -ScriptPath .\ORR_Checks\Private\Validate_ERPM_Admins.ps1 -ErrorAction Stop
+        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins.ps1" -ErrorAction Stop
         #"$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins.ps1"
         #.\ORR_Checks\Private\Validate_ERPM_Admins.ps1
 
@@ -43,8 +43,8 @@ Function Get-ERPMAdminsCheck
                 $validation = [PSCustomObject]@{System = 'ERPM'
                 Step = 'ERPMCheck'
                 SubStep = 'ERPM Admins'
-                Status = 'Passes'
-                FriendlyError = 'This server is configured for the ERPM Admins'
+                Status = 'Passed'
+                FriendlyError = ''
                 PsError = ''} 
             }
         

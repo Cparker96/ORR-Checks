@@ -7,8 +7,9 @@ https://ontextron.sharepoint.com/:w:/r/sites/TISMidrange/_layouts/15/Doc.aspx?so
     You must have 
 
 # Module Requirements
- Powershell -  Version Min "7.1.2"
+ Powershell - Version Min "7.1.2"
  Azure Module "AZ" - Version Min "5.5.0"
+ Dbatools - Version Min "1.0.148"
 
 # Data Sources
 To determine Readiness there are multiple data sources to check 

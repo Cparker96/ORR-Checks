@@ -15,15 +15,16 @@
         Date Modified   : 
 
 #>
+
 function New-SplunkSearch
 {
     $cred = Get-Credential
     param(
             [PSCredential] $cred,
             $search,
-            $searchMode = 'Fast', #smart
-            $splunkBaseUrl = "https://splk.textron.com:8089"
-        )
+            $searchMode = 'Fast',
+            $splunkBaseUrl = 'https://splk.textron.com:8089'
+    )
 
     $url = $splunkBaseUrl +"/services/search/jobs"
 
@@ -165,3 +166,4 @@ Function Get-SplunkCheck
         Write-Host "This server is configured for Splunk logging" -ForegroundColor Green 
     }
 }
+#>
