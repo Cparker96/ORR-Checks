@@ -22,7 +22,7 @@ function New-SplunkSearch
     param(
             [PSCredential] $cred,
             $search,
-            $searchMode = 'Fast',
+            $searchMode = 'Fast', 
             $splunkBaseUrl = 'https://splk.textron.com:8089'
     )
 
