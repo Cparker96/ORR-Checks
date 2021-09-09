@@ -1,4 +1,24 @@
+<#
+    .SYNOPSIS
+        Validate that a server is configured for logs in Splunk
+    .DESCRIPTION
+        This function authenticates into Splunk and retrieves one log within the last hour of the server reporting
+    .PARAMETER Environment
+        The $URL, $Key, and $Sid variables to be used to authenticate and perform a search 
+    .EXAMPLE
+
+    .NOTES
+        FunctionName    : Get-SplunkCheck
+        Created by      : Cody Parker
+        Date Coded      : 09/7/2021
+        Modified by     : 
+        Date Modified   : 
+
+#>
+
 $Url = "https://splk.textron.com:8089"
+$username = (Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'ORRChecks-Splunk').ContentType
+$password = (Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'ORRChecks-Splunk').SecretValue | ConvertFrom-SecureString -AsPlainText
 function Splunk-Auth
 {
     [CmdletBinding()]
@@ -10,8 +30,8 @@ function Splunk-Auth
     )
 
     $Headers = @{
-        'username'='svc_tis_midrange'
-        'password'='slope-VARIES-apparent-DENMARK-cafe-14225'
+        'username'=$username
+        'password'=$password
     }
 
     $Loginurl = $url.AbsoluteUri + "services/auth/login"
