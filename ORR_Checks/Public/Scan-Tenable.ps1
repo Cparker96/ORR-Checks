@@ -22,6 +22,7 @@ Function Scan-Tenable
         [parameter(Position = 0, Mandatory=$true)] [String] $AccessKey,
         [parameter(Position = 1, Mandatory=$true)] [String] $SecretKey
     )
+    [System.Collections.ArrayList]$Validation = @()
     try{
         # list all AzureOnBoarding scan info
         $headers = $null
@@ -29,7 +30,7 @@ Function Scan-Tenable
         $resource = "https://cloud.tenable.com/scans"
         $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
         $onboardingscans = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scans | where {$_.name -like "*AzureOnBoarding*"} | sort name
-
+        
         foreach ($scan in $onboardingscans)
         {
             # find the agent group associated with the scan name
@@ -93,13 +94,12 @@ Function Scan-Tenable
 
 
                     #add a row to the vailidation for correct configuration
-                    <#
                     $validation.Add([PSCustomObject]@{System = 'Tenable'
                     Step = 'TenableCheck'
                     SubStep = 'Tenable Scan'
                     Status = 'Passed'
                     FriendlyError = "" 
-                    PsError = ''}) > $null#>
+                    PsError = ''}) > $null
                     
                     return ($validation, $vulns)
                     break

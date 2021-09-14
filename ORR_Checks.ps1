@@ -78,12 +78,14 @@ Links:
 <#============================================
 Get variables
 #============================================#>
+[uri]$Url = "https://splk.textron.com:8089"
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
 $validateErpm = @()
 $validateErpmAdmins = @()
 $validateMcafee = @()
+$SplunkCheck = @()
 $validateTenable = @()
 $tennableVulnerabilities = @()
 $SqlCredential = @()
@@ -107,10 +109,13 @@ Try{
 	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey' -AsPlainText 
 	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey' -AsPlainText 
     $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
+	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
 }
 Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
 }
+
+Write-Host "Running ORR on Server $($VmRF.Hostname)"
 
 <#============================================
 Check VM in Azure
@@ -140,10 +145,12 @@ Log into VM and do pre domain join checks
 	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
 	{
 		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential
+		$VmRF.'Operating System' = 'Windows'
 	}
 	elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
 	{
 		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
+		$VmRF.'Operating System' = 'Linux'
 	}
 	else{
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
@@ -181,31 +188,9 @@ Check Security controls
 	Splunk
 	#============================================#>
 	# splunk needs to be reformatted
-	<#
-	$SplunkCheck = @()
-
 	write-host "Validating Splunk"
-
-	$SplunkCheck = get-SplunkCheck -Credential $Credential `
-	-Search $search
-
-	#seperate the VM object from the azCheck object
-	try{
-		$AzCheck | ft
-		$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
-		foreach($step in $azcheck.PsError)
-		{
-			if($step -ne '')
-			{
-				throw $step.PsError
-			}
-		}
-	}
-	catch{
-		Write-error "Azure Checks Failed to Authenticate `r`n$($AzCheck.FriendlyError)" -erroraction Stop
-	}
-	#>
-
+	
+	$SplunkCheck = get-SplunkCheck -vmobj $VMobj -url $Url -SplunkCredential $SplunkCredential
 
 	<#============================================
 	Tenable
@@ -215,55 +200,60 @@ Check Security controls
 	write-host "Validating Tenable"
 	$validateTenable = Get-TenableCheck -vmobj $VmObj -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
 
-	#$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
+	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
 
 <#============================================
 Formulate Output
 #============================================#>
 
 	$output = ($VmRF | select Hostname,
-	@{n='Business Unit'; e={$VmObj.Tags.BU}}, 
-	Subscription,
-	'Resource Group',
-	@{n='Region'; e={$VmObj.Location}},
-	@{n='Instance'; e={$VmObj.Tags.Instance}},
+	@{n='Business Unit'; e={$VmObj.Tags.BU}},
+	@{n='Location'; e={$VmObj.Location}},
 	@{n='Owner'; e={$VmObj.Tags.Owner}},
 	@{n='Patch Group'; e={$VmObj.Tags."Patch Group"}},
-	@{n='Purpose'; e={$VmObj.Tags.Purpose}},
+	@{n='Application'; e={$VmObj.Tags.Purpose}},
 	@{n='Service Level'; e={$VmObj.Tags."Service Level"}},
-	@{n='Virtual Network'; e={((get-aznetworkInterface -resourceid  $VmObj.NetworkProfile.NetworkInterfaces.id).ipconfigurations.subnet.id).split('/')[8]}},
 	'Operating System', # $vmobj.StorageProfile.osdisk.OsType
 	@{n='Physical or Virtual Server'; e={'Virtual'}},
-	'Datavail Support',
+	@{n='Network Information'; e={((get-aznetworkInterface -resourceid  $VmObj.NetworkProfile.NetworkInterfaces.id).ipconfigurations.subnet.id).split('/')[8]}},
+	"DNS record created (if any)",
+	@{n='Disk Information'; e={$vmobj.StorageProfile.DataDisks | select name, disksizeGB}}, 
 	@{n='Date Created'; e={get-date -format 'MM/dd/yyyy'}},
 	Requestor,
 	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
 	"Created By",
 	'Ticket Number' | fl) 
 
+	$output += "Azure Specific Information :`r`n" 
+	$output += ($VmRF | select Subscription, 
+	'Resource Group', 
+	@{n='Instance'; e={$VmObj.Tags.Instance}} | fl)
+
 	#Validation Steps and Status
 	$Validation = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	$VmCheck + 
+	($VmCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
 	$validateErpm[0] + 
 	$validateErpmAdmins[0] + 
 	$validateMcafee[0] + 
-	$validateMcafee[0] + 
-	$validateTenable[0] ) 
+	$SplunkCheck[0] +
+	$validateTenable[0] +
+	$tennableVulnerabilities) 
 
 	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
 	#+ $tennableVulnerabilities
 	# $SplunkCheck[0] + 
 
-	if($null -ne $validation.PsError){
-		$output += $validation.PsError
-	}
+	$output += $validation | where PsError -ne '' | select step, PsError | fl
 
-	<#print the output of the scans
-	foreach($object in $Validation){
-		[]
-		if($object.length -gt 1)
-		$output += $object | where 
-	}#>
+
+	<#$rawData = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
+	($VmCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
+	$validateErpm[0] + 
+	$validateErpmAdmins[0] + 
+	$validateMcafee[0] + 
+	$SplunkCheck[0] +
+	$validateTenable[0] +
+	$tennableVulnerabilities) #>
 
 	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 	$output | Out-File "c:\temp\$filename.txt"
