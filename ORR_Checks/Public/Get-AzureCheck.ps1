@@ -76,6 +76,13 @@ Function Get-AzureCheck{
                     FriendlyError = ''
                     PsError = ''}) > $null 
 
+
+
+    <#============================================
+    Check permissions
+    #============================================#>
+
+                    Get-AzRoleAssignment
     <#============================================
     Get VM object from Azure
     #============================================#>
