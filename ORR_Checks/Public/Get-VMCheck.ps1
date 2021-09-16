@@ -28,7 +28,7 @@ Function Get-VMCheck
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj,
         [parameter(Position = 1, Mandatory=$true)] $SqlCredential
-        )
+    )
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
 
