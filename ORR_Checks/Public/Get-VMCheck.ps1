@@ -57,7 +57,7 @@ Function Get-VMCheck
             if (($null -eq $service.DisplayName) -or ($service.Status -ne 'Running'))
             {
                 $Validation.add([PSCustomObject]@{System = 'Server'
-                Step = 'Validation'
+                Step = 'VmCheck'
                 SubStep = "Services - $($service.DisplayName)"
                 Status = 'Failed'
                 FriendlyError = 'The service' + $service.DisplayName + ' is not running or not installed.'
@@ -66,7 +66,7 @@ Function Get-VMCheck
             else 
             {
                 $Validation.add([PSCustomObject]@{System = 'Server'
-                Step = 'Validation'
+                Step = 'VmCheck'
                 SubStep = "Services - $($service.DisplayName)"
                 Status = 'Passed'
                 FriendlyError = ''
@@ -77,7 +77,7 @@ Function Get-VMCheck
     Catch 
     {
         $Validation.add([PSCustomObject]@{System = 'Server'
-        Step = 'Validation'
+        Step = 'VmCheck'
         SubStep = 'Services'
         Status = 'Failed'
         FriendlyError = 'Could not retrieve services'
@@ -99,7 +99,7 @@ Function Get-VMCheck
         if ($null -eq $updatelist)
         {
             $Validation.add([PSCustomObject]@{System = 'Server'
-            Step = 'Validation'
+            Step = 'VmCheck'
             SubStep = "Updates"
             Status = 'Failed'
             FriendlyError = 'There are still updates that need to be applied'
@@ -108,7 +108,7 @@ Function Get-VMCheck
         else 
         {
             $Validation.add([PSCustomObject]@{System = 'Server'
-            Step = 'Validation'
+            Step = 'VmCheck'
             SubStep = "Updates"
             Status = 'Passed'
             FriendlyError = ''
@@ -118,7 +118,7 @@ Function Get-VMCheck
     catch 
     {
         $Validation.add([PSCustomObject]@{System = 'Server'
-        Step = 'Validation'
+        Step = 'VmCheck'
         SubStep = "Updates"
         Status = 'Failed'
         FriendlyError = 'Check to make sure you have the package installed.'
@@ -130,36 +130,43 @@ Function Get-VMCheck
     <#============================================
     Take hostname out of TIS_CMDB
     #============================================#>
-
-
     try 
     {        
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
             -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
  
+
         if ($null -eq $connection)
         {
             $Validation.add([PSCustomObject]@{System = 'SQL'
-            Step = 'Validation'
+            Step = 'VmCheck'
+            SubStep = 'Server Name'
+            Status = 'Failed'
+            FriendlyError = 'Server Name is not in the SQL DB'
+            PsError = ''}) > $null 
+        }
+        elseif('InUse' -ne $connection.status) 
+        {
+            $Validation.add([PSCustomObject]@{System = 'SQL'
+            Step = 'VmCheck'
+            SubStep = 'Server Name'
+            Status = 'Failed'
+            FriendlyError = 'Please update the Status of the Server in the SQL DB'
+            PsError = ''}) > $null 
+        }
+        else{
+            $Validation.add([PSCustomObject]@{System = 'SQL'
+            Step = 'VmCheck'
             SubStep = 'Server Name'
             Status = 'Passed'
             FriendlyError = ''
             PsError = ''}) > $null 
         }
-        else 
-        {
-            $Validation.add([PSCustomObject]@{System = 'SQL'
-            Step = 'Validation'
-            SubStep = 'Server Name'
-            Status = 'Failed'
-            FriendlyError = 'Please take the Server name out of the SQL DB'
-            PsError = $PSItem.Exception}) > $null 
-        }
     }
     catch 
     {
         $Validation.add([PSCustomObject]@{System = 'SQL'
-        Step = 'Validation'
+        Step = 'VmCheck'
         SubStep = 'Server Name'
         Status = 'Failed'
         FriendlyError = 'Could not login to SQL DB'
@@ -208,7 +215,7 @@ Function Get-VMCheck
     }#>
 
 
-    return ($Validation, $services, $updatelist)
+    return ($Validation, $services, $updatelist, $connection)
 }
 
 
