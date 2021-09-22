@@ -79,5 +79,5 @@ Function Get-TenableCheck
         return $validation
     }
 
-    return ($validation, "Agent Status : $($agentinfo.status)", $agentinfo.groups.name)
+    return ($validation, $agentinfo)
 }

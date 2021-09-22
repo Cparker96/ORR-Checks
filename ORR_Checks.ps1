@@ -78,7 +78,7 @@ Links:
 <#============================================
 Get variables
 #============================================#>
-[uri]$Url = "https://splk.textron.com:8089"
+$Url = "https://splk.textron.com:8089"
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
@@ -132,7 +132,18 @@ Check VM in Azure
 	-ResourceGroup $VmRF.'Resource Group' 
 
 	#seperate the VM object from the azCheck object
-	$VmObj = $AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'}
+	if($null -eq ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})){
+		Write-Error "$($AzCheck.FriendlyError)" -ErrorAction Stop
+	}else{
+		$VmObj = ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})
+	}
+
+	#if the contributor role isn't checked out then fail the script
+	if(($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].status -eq 'failed'){
+		Write-Error ($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].FriendlyError -ErrorAction Stop
+	}
+
+
 
 
 <#============================================
@@ -146,13 +157,11 @@ Log into VM and do pre domain join checks
 	{
 		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential
 		$VmRF.'Operating System' = 'Windows'
-	}
-	elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
+	}elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
 	{
 		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
 		$VmRF.'Operating System' = 'Linux'
-	}
-	else{
+	}else{
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
 
@@ -200,13 +209,21 @@ Check Security controls
 	write-host "Validating Tenable"
 	$validateTenable = Get-TenableCheck -vmobj $VmObj -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
 
-	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
+	$agentinfo = @()
+	$agentinfo = $validateTenable[1]
+	
+	$agentinfo = @()
+	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 
 <#============================================
 Formulate Output
 #============================================#>
 
-	$output = ($VmRF | select Hostname,
+try{
+	[System.Collections.ArrayList]$output = @()
+	$output += "Host Information :"
+	$output += "============================"
+	$output += ($VmRF | select Hostname,
 	@{n='Business Unit'; e={$VmObj.Tags.BU}},
 	@{n='Location'; e={$VmObj.Location}},
 	@{n='Owner'; e={$VmObj.Tags.Owner}},
@@ -224,12 +241,15 @@ Formulate Output
 	"Created By",
 	'Ticket Number' | fl) 
 
-	$output += "Azure Specific Information :`r`n" 
+	$output += "Environment Specific Information :"
+	$output += "============================"
 	$output += ($VmRF | select Subscription, 
 	'Resource Group', 
 	@{n='Instance'; e={$VmObj.Tags.Instance}} | fl)
 
 	#Validation Steps and Status
+	$output += "Validation Steps and Status :"
+	$output += "============================"
 	$Validation = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
 	($VmCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
 	$validateErpm[0] + 
@@ -237,24 +257,63 @@ Formulate Output
 	$validateMcafee[0] + 
 	$SplunkCheck[0] +
 	$validateTenable[0] +
-	$tennableVulnerabilities) 
+	$tennableVulnerabilities[0]) 
 
 	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
 	#+ $tennableVulnerabilities
 	# $SplunkCheck[0] + 
 
-	$output += $validation | where PsError -ne '' | select step, PsError | fl
+	if($null -ne ($validation | where PsError -ne '' | select step, PsError | fl)){
+		$output += "Errors :"
+		$output += "============================"
+		$output += $validation | where PsError -ne '' | select step, PsError | fl
+	}
 
+	$output += "Validation Step Output :"
+	$output += "============================"
 
-	<#$rawData = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	($VmCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	$validateErpm[0] + 
-	$validateErpmAdmins[0] + 
-	$validateMcafee[0] + 
-	$SplunkCheck[0] +
-	$validateTenable[0] +
-	$tennableVulnerabilities) #>
+	[System.Collections.ArrayList]$rawData  = @()
+	$rawData += $AzCheck[0] | select -unique System, Step
+	$rawData += ($AzCheck | where {$_.gettype().name -ne 'ArrayList'} | fl)
+	$rawData += "___________"
+	$rawData += $VmCheck[0][0..3] | select -unique System, Step, SubStep 
+	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | ft)  
+	$rawData += "___________"
+	$rawData += $VmCheck[0][4] | select -unique System, Step, SubStep 
+	$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
+	$rawData += "___________"
+	$rawData += $VmCheck[0][5] | select -unique System, Step, SubStep  
+	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
+	$rawData += "___________"
+	$rawData += $validateErpm[0] | select -unique System, Step, SubStep 
+	$rawData += $validateErpm[1] 
+	$rawData += "___________"
+	$rawData += $validateErpmAdmins[0] | select -unique System, Step, SubStep 
+	$rawData += $validateErpmAdmins[1] 
+	$rawData += "___________"
+	$rawData += $validateMcafee[0][0] | select -unique System, Step, SubStep 
+	$rawData += $validateMcafee[1] 
+	$rawData += "___________"
+	$rawData += $validateMcafee[0][1] | select -unique System, Step, SubStep 
+	$rawData += $validateMcafee[2] 
+	$rawData += "___________"
+	$rawData += $SplunkCheck[0] | select -unique System, Step, SubStep 
+	$rawData += $SplunkCheck[1] 
+	$rawData += "___________"
+	$rawData += $validateTenable[0] | select -unique System, Step, SubStep
+	$rawData += $validateTenable[1] 
+	$rawData += "___________"
+	$rawData += $tennableVulnerabilities[0] | select -unique System, Step, SubStep
+	$rawData += $tennableVulnerabilities[1] #>
+
+	$output += $rawData
+
 
 	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 	$output | Out-File "c:\temp\$filename.txt"
+}catch{
+	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
+	$output | Out-File "c:\temp\$filename.txt"
+}
+
 

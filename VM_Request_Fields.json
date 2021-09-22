@@ -1,10 +1,10 @@
 {
-    "Hostname" : "TXEAWSAZU809",
+    "Hostname" : "Test123",
     "Environment" : "AzureCloud",
-    "Subscription" : "TSV",
-    "Resource Group" : "Web-CatTracker-Dev",
-    "Operating System" : "Windows Server 2016 Datacenter",
-    "Requestor" : "Jessica Hof",
+    "Subscription" : "Enterprise",
+    "Resource Group" : "308-Utility",
+    "Operating System" : "Windows Server 2019 Datacenter",
+    "Requestor" : "TESTING",
     "Created By" : "Claire Larvin",
-    "Ticket Number" : "TASK0309102"
+    "Ticket Number" : "N/A"
 }
