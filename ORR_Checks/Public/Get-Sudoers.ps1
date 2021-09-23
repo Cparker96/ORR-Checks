@@ -28,7 +28,7 @@ function Get-Sudoers
     [System.Collections.ArrayList]$Validation = @()
 
     try{
-        $check =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
+        $check = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
         -ScriptPath ".\Private\Service_Checks_Linux.sh" -ErrorAction Stop
     
         $sudofile = $check.Value.message
