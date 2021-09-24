@@ -78,7 +78,7 @@ Links:
 <#============================================
 Get variables
 #============================================#>
-$Url = "https://splk.textron.com:8089"
+[Uri]$Url = "https://splk.textron.com:8089"
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
@@ -197,9 +197,20 @@ Check Security controls
 	Splunk
 	#============================================#>
 	# splunk needs to be reformatted
-	write-host "Validating Splunk"
+	write-host "Validating Splunk Authentication"
 	
-	$SplunkCheck = get-SplunkCheck -vmobj $VMobj -url $Url -SplunkCredential $SplunkCredential
+	$splunkauth = Splunk-Auth -url $Url -SplunkCredential $SplunkCredential
+	Start-Sleep -Seconds 5
+
+	write-host "Validating Splunk Search"
+
+	$splunksearch = Splunk-Search -url $Url -Key $splunkauth[1] -VmObj $VmObj
+	Start-Sleep -Seconds 5
+
+	write-host "Validating Splunk Result"
+
+	$splunkcheck = Splunk-Result -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
+	Start-Sleep -Seconds 5
 
 	<#============================================
 	Tenable
@@ -213,7 +224,7 @@ Check Security controls
 	$agentinfo = $validateTenable[1]
 	
 	$agentinfo = @()
-	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+	#$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 
 <#============================================
 Formulate Output
