@@ -15,18 +15,17 @@
         Date Modified   : 
 
 #>
-
-$username = (Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'ORRChecks-Splunk').ContentType
-$password = (Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'ORRChecks-Splunk').SecretValue | ConvertFrom-SecureString -AsPlainText
 function Splunk-Auth
 {
     [CmdletBinding()]
-
     Param
     (
-        [Parameter(Mandatory=$true)]        
-        [Uri]$Url
+        [Parameter(Mandatory=$true)][Uri]$Url, 
+        [Parameter(Mandatory=$true)] $SplunkCredential
     )
+    $username = $SplunkCredential.UserName
+    $password = $SplunkCredential.GetNetworkCredential().Password
+    [System.Collections.ArrayList]$Validation = @()
 
     $Headers = @{
         'username'=$username
@@ -36,38 +35,53 @@ function Splunk-Auth
     $Loginurl = $url.AbsoluteUri + "services/auth/login"
     [regex]$sessionKey = "(?<=<sessionKey>)(.*)(?=<\/sessionKey>)"
 
-    try {
-    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
-    }
-    catch {
-    return $Error[0].Exception
-    }
+    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content   
 
     if($Content) {
-    #the purpose of "$script:Key" is to make the $Key variable available to be used dynamically with other functions
-    $Key = "Splunk " + $sessionKey.Match($content).Value
+    $script:Key = "Splunk " + $sessionKey.Match($content).Value
+
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Authentication'
+    Status = 'Passed'
+    FriendlyError = ''
+    PsError = ''}) > $null
+    } 
+    elseif (!$Content -OR !$Key) {
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Authentication'
+    Status = 'Failed'
+    FriendlyError = 'Could not authenticate to Splunk'
+    PsError = $PSItem.Exception}) > $null
     }
-    if (!$Content -OR !$Key) {
-    return "Error. No valid key returned by $Loginurl"
-    }
-    return $Key
+    return $validation, $Key
 }
+
 function Splunk-Search 
 {      
     [CmdletBinding()]
-
     Param
     (
-        [Parameter(Mandatory=$true)]
-        [Uri]$Url,
-        [Parameter(Mandatory=$true)]
-        [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine]$VmObj,
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [string]$Key
+        [Parameter(Mandatory=$true)]$VmObj,
+        [Parameter(Mandatory=$true)][Uri]$Url,
+        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Key
     )
+    [System.Collections.ArrayList]$Validation = @()
 
-    $Searchstring = "search index=win_event* host=$($VmObj.Name) earliest=-60m | head 1"
+    #change the search string based on the OS type
+    If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
+    {
+        $Searchstring = "search index=win_event* host=$($VmObj.Name) earliest=-60m | head 1"
+    }
+    elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
+    {
+        $Searchstring = "search index=syslog* host=$($VmObj.Name) earliest=-60m | head 1"
+    }
+    else{
+        Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
+    }
+
     $Searchurl = $url.AbsoluteUri + "services/search/jobs"
     [regex]$Jobsid = "(?<=<sid>)(.*)(?=<\/sid>)"
 
@@ -82,55 +96,65 @@ function Splunk-Search
         'earliest_time' = $startdate
         'latest_time' = $enddate
     }
-    
-    try 
-    {
-        $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
-    }
-    catch 
-    {
-        return $Error[0].Exception
-    }
-        
+
+    $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
+
     if($Content) {
-    $Sid = $Jobsid.Match($Content).Value.ToString()
+    $script:Sid = $Jobsid.Match($Content).Value.ToString()
+    
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Splunk search'
+    Status = 'Passed'
+    FriendlyError = ''
+    PsError = ''}) > $null
+    } 
+    elseif (!$Content -OR !$Sid) {
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Splunk search'
+    Status = 'Failed'
+    FriendlyError = 'Could not retrieve Splunk search'
+    PsError = $PSItem.Exception}) > $null
     }
-    if (!$Content -OR !$Sid) {
-    return "Error. No valid sid returned by $Searchurl"
-    }
-    return $Sid
+    return $validation, $Sid
 }
 
 function Splunk-Result 
 {
     [CmdletBinding()]
-
     Param
     (
-        [Parameter(Mandatory=$true)]
-        [Uri]$Url,
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [string]$Key,
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [string]$Sid
+        [Parameter(Mandatory=$true)][Uri]$Url,
+        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Key,
+        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Sid
     )
+    [System.Collections.ArrayList]$Validation = @()
 
     $JobResultUrl = $Url.AbsoluteUri + ("services/search/jobs/{0}/results?output_mode=json&count=0" -f $Sid)
 
     $Auth = @{'Authorization'=$Key}
 
-    try {
-    $Content = (Invoke-WebRequest -uri $JobResultUrl -Method Get -Headers $Auth -UseBasicParsing -ErrorAction Stop).content
-    }
-    catch {
-    return $Error[0].Exception
-    }
+    $Content = (Invoke-WebRequest -uri $JobResultUrl -Method Get -Headers $Auth -ContentType "application/json" -UseBasicParsing  -ErrorAction Stop).content
+
+    Start-Sleep -Seconds 5
 
     if($Content) {
-    return ($Content | ConvertFrom-Json).results
-    } else {
-    "Error. No valid jobstate returned by $($JobResultUrl)"
+
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Splunk Log'
+    Status = 'Passed'
+    FriendlyError = ''
+    PsError = ''}) > $null
+    } 
+    else {
+    $validation.Add([PSCustomObject]@{System = 'Splunk'
+    Step = 'SplunkCheck'
+    SubStep = 'Validate Splunk Log'
+    Status = 'Failed'
+    FriendlyError = 'Could not retrieve logs for Splunk'
+    PsError = $PSItem.Exception}) > $null
     }
+    return $validation, $Content
 }

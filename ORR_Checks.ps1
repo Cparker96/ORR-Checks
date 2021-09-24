@@ -199,16 +199,18 @@ Check Security controls
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
 	
-	$splunkauth = Splunk-Auth -url $url
+	$splunkauth = Splunk-Auth -url $Url -SplunkCredential $SplunkCredential
+	Start-Sleep -Seconds 5
 
 	write-host "Validating Splunk Search"
 
-	$splunksearch = Splunk-Search -url $url -Key $splunkauth
+	$splunksearch = Splunk-Search -url $Url -Key $splunkauth[1] -VmObj $VmObj
+	Start-Sleep -Seconds 5
 
-	write-host "Validating Splunk result"
+	write-host "Validating Splunk Result"
 
-	$splunkcheck = Splunk-Result -url $url -Key $splunkauth -Sid $Splunksearch
-
+	$splunkcheck = Splunk-Result -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
+	Start-Sleep -Seconds 5
 
 	<#============================================
 	Tenable
