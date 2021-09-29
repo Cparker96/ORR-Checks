@@ -83,7 +83,7 @@ Function Get-VMCheck
         FriendlyError = 'Could not retrieve services'
         PsError = $PSItem.Exception}) > $null 
 
-        return $Validation
+        return $Validation, $null, $null, $null
     }
 
     <#============================================
@@ -124,7 +124,7 @@ Function Get-VMCheck
         FriendlyError = 'Check to make sure you have the package installed.'
         PsError = $PSItem.Exception}) > $null 
 
-        return $Validation
+        return $Validation, $Services, $null, $null
     }
 
     <#============================================
@@ -133,7 +133,7 @@ Function Get-VMCheck
     try 
     {        
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [server name] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
+            -Query "(select * from dbo.AzureAvailableServers where [servername] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
  
 
         if ($null -eq $connection)
@@ -172,7 +172,7 @@ Function Get-VMCheck
         FriendlyError = 'Could not login to SQL DB'
         PsError = $PSItem.Exception}) > $null 
 
-        return $Validation
+        return $Validation , $services, $updatelist, $null
     }
 
     <#============================================

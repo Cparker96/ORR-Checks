@@ -15,7 +15,7 @@
         Date Modified   : 
 
 #>
-function Splunk-Auth
+function get-SplunkAuth
 {
     [CmdletBinding()]
     Param
@@ -38,7 +38,7 @@ function Splunk-Auth
     $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content   
 
     if($Content) {
-    $script:Key = "Splunk " + $sessionKey.Match($content).Value
+    $Key = "Splunk " + $sessionKey.Match($content).Value
 
     $validation.Add([PSCustomObject]@{System = 'Splunk'
     Step = 'SplunkCheck'
@@ -58,7 +58,7 @@ function Splunk-Auth
     return $validation, $Key
 }
 
-function Splunk-Search 
+function get-SplunkSearch 
 {      
     [CmdletBinding()]
     Param
@@ -120,7 +120,7 @@ function Splunk-Search
     return $validation, $Sid
 }
 
-function Splunk-Result 
+function Get-SplunkResult 
 {
     [CmdletBinding()]
     Param

@@ -25,7 +25,7 @@ Function Get-ERPMOUCheck
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
     
-        $validateerpm = $erpm.Value.message
+        $validateerpm = $erpm.Value.message | ConvertFrom-Csv
 
         if ($null -eq $validateerpm)
         {

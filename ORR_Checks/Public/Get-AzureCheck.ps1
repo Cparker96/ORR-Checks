@@ -187,9 +187,13 @@ Function Get-AzureCheck{
     $role = @()
     $role = Get-AzRoleAssignment -RoleDefinitionName 'Contributor' -Scope $vm.Id 
     $role += Get-AzRoleAssignment -RoleDefinitionName 'Owner' -Scope $vm.Id
-    
+
+    $elevatedUsers = @()
+    $elevatedUsers = $role.SignInName 
+    $elevatedUsers += ($role | where objecttype -eq 'Group' | %{get-azadgroupmember -GroupObjectId $_.ObjectId} | select userPrincipalName).userPrincipalName
+
     #if the contributor role isn't checked out then fail
-    if($azContext.Account.Id -notin $role.SignInName){
+    if($azContext.Account.Id -notin $elevatedUsers){
         $Validation.add([PSCustomObject]@{System = 'Azure'
         Step = 'AzureCheck'
         SubStep = 'Access'

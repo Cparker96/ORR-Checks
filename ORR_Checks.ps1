@@ -74,6 +74,13 @@ Links:
 #============================================#>
 
 
+<#============================================
+import-module if the version in this folder isn't the one that you have
+#============================================#>
+<#if(($null -eq (get-module ORR_Checks).version) -and 
+((get-module ORR_Checks).version -ne (test-modulemanifest .\ORR_Checks\ORR_Checks.psd1).Version)){
+	Import-Module .\ORR_Checks -Force -WarningAction SilentlyContinue -ErrorAction Stop
+}#>
 
 <#============================================
 Get variables
@@ -157,8 +164,7 @@ Log into VM and do pre domain join checks
 	{
 		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential
 		$VmRF.'Operating System' = 'Windows'
-	}elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
-	{
+	}elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') { #if a Linux server
 		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
 		$VmRF.'Operating System' = 'Linux'
 	}else{
@@ -199,17 +205,17 @@ Check Security controls
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
 	
-	$splunkauth = Splunk-Auth -url $Url -SplunkCredential $SplunkCredential
+	$splunkauth = Get-SplunkAuth -url $Url -SplunkCredential $SplunkCredential
 	Start-Sleep -Seconds 5
 
 	write-host "Validating Splunk Search"
 
-	$splunksearch = Splunk-Search -url $Url -Key $splunkauth[1] -VmObj $VmObj
+	$splunksearch = Get-SplunkSearch -VmObj $VmObj -Url $url -Key $splunkauth[1]
 	Start-Sleep -Seconds 5
 
 	write-host "Validating Splunk Result"
 
-	$splunkcheck = Splunk-Result -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
+	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
 	Start-Sleep -Seconds 5
 
 	<#============================================
@@ -222,15 +228,14 @@ Check Security controls
 
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
-	
-	$agentinfo = @()
-	#$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+
+	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 
 <#============================================
 Formulate Output
 #============================================#>
 
-try{
+
 	[System.Collections.ArrayList]$output = @()
 	$output += "Host Information :"
 	$output += "============================"
@@ -261,14 +266,18 @@ try{
 	#Validation Steps and Status
 	$output += "Validation Steps and Status :"
 	$output += "============================"
-	$Validation = [PSCustomObject](($AzCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	($VmCheck | where {$_.gettype().name -eq 'ArrayList'}) + 
-	$validateErpm[0] + 
-	$validateErpmAdmins[0] + 
-	$validateMcafee[0] + 
-	$SplunkCheck[0] +
-	$validateTenable[0] +
-	$tennableVulnerabilities[0]) 
+
+	[System.Collections.ArrayList]$Validation  = @()
+	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
+	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
+	$Validation += $validateErpm[0]  
+	$Validation += $validateErpmAdmins[0]  
+	$Validation += $validateMcafee[0]  
+	$Validation += $SplunkAuth[0]
+	$Validation += $SplunkSearch[0]  
+	$Validation += $SplunkCheck[0] 
+	$Validation += $validateTenable[0] 
+	$Validation += $tennableVulnerabilities[0] 
 
 	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
 	#+ $tennableVulnerabilities
@@ -284,47 +293,34 @@ try{
 	$output += "============================"
 
 	[System.Collections.ArrayList]$rawData  = @()
-	$rawData += $AzCheck[0] | select -unique System, Step
+	$rawData += "`r`n______Azure Check_____"
 	$rawData += ($AzCheck | where {$_.gettype().name -ne 'ArrayList'} | fl)
-	$rawData += "___________"
-	$rawData += $VmCheck[0][0..3] | select -unique System, Step, SubStep 
+	$rawData += "`r`n______VM Check - Services_____"
 	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | ft)  
-	$rawData += "___________"
-	$rawData += $VmCheck[0][4] | select -unique System, Step, SubStep 
+	$rawData += "`r`n_____VM Check - Updates______"
 	$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
-	$rawData += "___________"
-	$rawData += $VmCheck[0][5] | select -unique System, Step, SubStep  
+	$rawData += "`r`n_____VM Check - Server Name______"
 	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
-	$rawData += "___________"
-	$rawData += $validateErpm[0] | select -unique System, Step, SubStep 
+	$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
 	$rawData += $validateErpm[1] 
-	$rawData += "___________"
-	$rawData += $validateErpmAdmins[0] | select -unique System, Step, SubStep 
+	$rawData += "`r`n_____ERPM Check - ERPM Admins______"
 	$rawData += $validateErpmAdmins[1] 
-	$rawData += "___________"
-	$rawData += $validateMcafee[0][0] | select -unique System, Step, SubStep 
+	$rawData += "`r`n_____McAfee Check - Agent Configuration______" 
 	$rawData += $validateMcafee[1] 
-	$rawData += "___________"
-	$rawData += $validateMcafee[0][1] | select -unique System, Step, SubStep 
+	$rawData += "`r`n_____McAfee Check - Check in Time______"
 	$rawData += $validateMcafee[2] 
-	$rawData += "___________"
-	$rawData += $SplunkCheck[0] | select -unique System, Step, SubStep 
-	$rawData += $SplunkCheck[1] 
-	$rawData += "___________"
-	$rawData += $validateTenable[0] | select -unique System, Step, SubStep
-	$rawData += $validateTenable[1] 
-	$rawData += "___________"
-	$rawData += $tennableVulnerabilities[0] | select -unique System, Step, SubStep
-	$rawData += $tennableVulnerabilities[1] #>
+	$rawData += "`r`n_____Splunk Check______" 
+	$rawData += ($SplunkCheck[1] | convertfrom-json).results | fl
+	$rawData += "`r`n_____Tenable Check - Configuration______"
+	$rawData += $validateTenable[1]  | fl
+	$rawData += "`r`n_____Tenable Check - Vulnerabilities______"
+	$rawData += $tennableVulnerabilities[1] | ft #>
 
 	$output += $rawData
 
 
 	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 	$output | Out-File "c:\temp\$filename.txt"
-}catch{
-	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
-	$output | Out-File "c:\temp\$filename.txt"
-}
+
 
 
