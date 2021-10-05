@@ -100,7 +100,7 @@ function get-SplunkSearch
     $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
 
     if($Content) {
-    $script:Sid = $Jobsid.Match($Content).Value.ToString()
+    $Sid = $Jobsid.Match($Content).Value.ToString()
     
     $validation.Add([PSCustomObject]@{System = 'Splunk'
     Step = 'SplunkCheck'
