@@ -96,6 +96,8 @@ $SplunkCheck = @()
 $validateTenable = @()
 $tennableVulnerabilities = @()
 $SqlCredential = @()
+$sqlInstance = 'txadbsazu001.database.windows.net'
+$sourcedbname = 'TIS_CMDB'
 
 #get Server Build variables from VM_Request_Fields.json
 Try
@@ -229,17 +231,14 @@ Check Security controls
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
-	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+	#$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 
 <#============================================
 Formulate Output
 #============================================#>
-
-
-	[System.Collections.ArrayList]$output = @()
-	$output += "Host Information :"
-	$output += "============================"
-	$output += ($VmRF | select Hostname,
+	
+	$HostInformation = @()
+	$HostInformation = ($VmRF | select Hostname,
 	@{n='Business Unit'; e={$VmObj.Tags.BU}},
 	@{n='Location'; e={$VmObj.Location}},
 	@{n='Owner'; e={$VmObj.Tags.Owner}},
@@ -255,18 +254,16 @@ Formulate Output
 	Requestor,
 	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
 	"Created By",
-	'Ticket Number' | fl) 
+	'Ticket Number') 
 
-	$output += "Environment Specific Information :"
-	$output += "============================"
-	$output += ($VmRF | select Subscription, 
+
+	#environment Specific Information
+	$EnvironmentSpecificInformation = @()
+	$EnvironmentSpecificInformation = ($VmRF | select Subscription, 
 	'Resource Group', 
-	@{n='Instance'; e={$VmObj.Tags.Instance}} | fl)
+	@{n='Instance'; e={$VmObj.Tags.Instance}})
 
 	#Validation Steps and Status
-	$output += "Validation Steps and Status :"
-	$output += "============================"
-
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
 	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
@@ -279,48 +276,95 @@ Formulate Output
 	$Validation += $validateTenable[0] 
 	$Validation += $tennableVulnerabilities[0] 
 
-	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
-	#+ $tennableVulnerabilities
-	# $SplunkCheck[0] + 
-
+	# only input Errors section if there are error objects
+	[System.Collections.ArrayList]$Errors  = @()
 	if($null -ne ($validation | where PsError -ne '' | select step, PsError | fl)){
-		$output += "Errors :"
-		$output += "============================"
-		$output += $validation | where PsError -ne '' | select step, PsError | fl
+		$Errors += "Errors :"
+		$Errors += "============================"
+		$Errors += $validation | where PsError -ne '' | select step, PsError | fl
 	}
 
-	$output += "Validation Step Output :"
-	$output += "============================"
-
 	[System.Collections.ArrayList]$rawData  = @()
+	[System.Collections.ArrayList]$sqlData  = @()	
 	$rawData += "`r`n______Azure Check_____"
-	$rawData += ($AzCheck | where {$_.gettype().name -ne 'ArrayList'} | fl)
+	$rawData +=  ($AzCheck | where {$_.gettype().name -ne 'ArrayList'}) | fl
+	$sqlData += @{AzureCheck = (($AzCheck | where {$_.gettype().name -ne 'ArrayList'}) | ConvertTo-Json)}
 	$rawData += "`r`n______VM Check - Services_____"
 	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | ft)  
+	$sqlData += @{VmCheck_Services = ((($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | convertto-json))}
 	$rawData += "`r`n_____VM Check - Updates______"
 	$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
+	$sqlData += @{VmCheck_Updates = (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] | convertto-json)}
 	$rawData += "`r`n_____VM Check - Server Name______"
 	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
+	$sqlData += @{VmCheck_ServerName = ((($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | convertto-json)}
 	$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
 	$rawData += $validateErpm[1] 
+	$sqlData += @{ERPMCheck_OU = ($validateErpm[1] | convertto-json)}
 	$rawData += "`r`n_____ERPM Check - ERPM Admins______"
-	$rawData += $validateErpmAdmins[1] 
+	$rawData += $validateErpmAdmins[1]
+	$sqlData += @{ERPMCheck_Admins = ($validateErpmAdmins[1] | convertto-json)}
 	$rawData += "`r`n_____McAfee Check - Agent Configuration______" 
 	$rawData += $validateMcafee[1] 
+	$sqlData += @{McafeeCheck_Configuration = ($validateMcafee[1] | convertto-json)}
 	$rawData += "`r`n_____McAfee Check - Check in Time______"
 	$rawData += $validateMcafee[2] 
+	$sqlData += @{McafeeCheck_Checkin = ($validateMcafee[2] | convertto-json)}
 	$rawData += "`r`n_____Splunk Check______" 
 	$rawData += ($SplunkCheck[1] | convertfrom-json).results | fl
+	$sqlData += @{SplunkCheck = (($SplunkCheck[1] | convertfrom-json).results | convertto-json)}
 	$rawData += "`r`n_____Tenable Check - Configuration______"
-	$rawData += $validateTenable[1]  | fl
+	$rawData += $validateTenable[1] | fl
+	$sqlData += @{TenableCheck_Configuration = ($validateTenable[1] | convertto-json)}
 	$rawData += "`r`n_____Tenable Check - Vulnerabilities______"
-	$rawData += $tennableVulnerabilities[1] | ft #>
+	$rawData += $tennableVulnerabilities[1] | ft 
+	$sqlData += @{TenableCheck_Vulnerabilites = ($tennableVulnerabilities[1] | convertto-json)}
 
+	#format output for textfile
+	[System.Collections.ArrayList]$output = @()
+	$output += "Host Information :"
+	$output += "============================"
+	$output += $HostInformation | fl
+	$output += "Environment Specific Information :"
+	$output += "============================"
+	$output += $EnvironmentSpecificInformation | fl
+	$output += "Validation Steps and Status :"
+	$output += "============================"
+	$output += $Validation | Select System, Step, SubStep, Status, FriendlyError | ft
+	$output += $Errors
+	$output += "Validation Step Output :"
+	$output += "============================"
 	$output += $rawData
 
+	#format output for SQL
+	$sqlinput  = @{}	
+	$sqlinput = @{HostInformation = ($HostInformation | convertto-json);
+		EnvironmentSpecificInformation = ($EnvironmentSpecificInformation | convertto-json);
+		Status = ($Validation | convertto-json)
+	} + $sqlData
 
+	$sqlinput += $sqlData
+
+	$bla = [pscustomobject]$sqlinput
+
+<#============================================
+Write Output to Text file 
+#============================================#>	
 	$filename = "$($vmRF.Hostname)_$(get-date -Format 'MM-dd-yyyy.hh.mm')"
 	$output | Out-File "c:\temp\$filename.txt"
 
+<#============================================
+Write Output to database
+#============================================#>
 
+$DataTable = $sqlinput 		| ConvertTo-DbaDataTable 
 
+<#
+Write-DbaDbTableData -SqlInstance $sqlinstance `
+-InputObject $DataTable `
+-Database $DatabaseName `
+-Table ORR_Checks `
+-KeepNulls `
+-SqlCredential $SqlCredential `
+-BulkCopyTimeOut 300
+#>
