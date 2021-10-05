@@ -89,7 +89,7 @@ Get variables
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
-$validateErpm = @()
+$validateErpmOU = @()
 $validateErpmAdmins = @()
 $validateMcafee = @()
 $SplunkCheck = @()
@@ -299,8 +299,8 @@ Formulate Output
 	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
 	$sqlData += @{VmCheck_ServerName = ((($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | convertto-json)}
 	$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
-	$rawData += $validateErpm[1] 
-	$sqlData += @{ERPMCheck_OU = ($validateErpm[1] | convertto-json)}
+	$rawData += $validateErpmOU[1] 
+	$sqlData += @{ERPMCheck_OU = ($validateErpmOU[1] | convertto-json)}
 	$rawData += "`r`n_____ERPM Check - ERPM Admins______"
 	$rawData += $validateErpmAdmins[1]
 	$sqlData += @{ERPMCheck_Admins = ($validateErpmAdmins[1] | convertto-json)}
