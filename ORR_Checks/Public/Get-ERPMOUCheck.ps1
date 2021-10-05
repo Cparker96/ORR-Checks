@@ -26,20 +26,9 @@ Function Get-ERPMOUCheck
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
     
-        $validateerpm = $erpm.Value.message | ConvertFrom-Csv
-    }
-    catch {
-        $Error[0].exception
-    }
-        <#$erpm.value.[2].Message
-        if ($erpm.value.Message -like '*error*') 
-        {  
+        $validateerpm = $erpm.Value.message
 
-            Write-Output "Failed. An error occurred: `n $($result.value.Message)" | Out-File -Filepath C:\OutputLog.txt -Append
-            throw $($result.value.Message)        
-        }#>
-
-        if (!$validateerpm)
+        if ($validateerpm -notlike "*LDAP://*")
         {
             $validation = [PSCustomObject]@{System = 'Server'
             Step = 'ERPMCheck'
