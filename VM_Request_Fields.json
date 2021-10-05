@@ -1,8 +1,8 @@
 {
-    "Hostname" : "TXTAPPGOV006 ",
-    "Environment" : "AzureUSGovernment",
-    "Subscription" : "AGC_Enterprise",
-    "Resource Group" : "Enterprise-eDiscovery",
+    "Hostname" : "Test123",
+    "Environment" : "AzureCloud",
+    "Subscription" : "Enterprise",
+    "Resource Group" : "308-Utility",
     "Operating System" : "",
     "Requestor" : "Christopher Reilly",
     "Created By" : "Ricky Barbour",
