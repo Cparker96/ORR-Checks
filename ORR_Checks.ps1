@@ -231,7 +231,7 @@ Check Security controls
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
-	#$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+	$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 
 <#============================================
 Formulate Output
