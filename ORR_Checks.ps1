@@ -380,7 +380,3 @@ $DataTable | Write-DbaDbTableData -SqlInstance $sqlinstance `
 -Database $sqlDatabase  `
 -Table dbo.ORR_Checks `
 -SqlCredential $SqlCredential 
-
-
-
-
