@@ -85,6 +85,8 @@ import-module if the version in this folder isn't the one that you have
 <#============================================
 Get variables
 #============================================#>
+Set-StrictMode -version 3 
+set-strictMode -Off
 [Uri]$Url = "https://splk.textron.com:8089"
 $VmRF = @()
 $AzCheck = @()
@@ -114,7 +116,7 @@ Get Credentials
 Try{
 	#connect to Public azure and make sure the context is Enterprise where the keyvault exists
 	disconnect-azaccount > $null
-	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' -WarningAction SilentlyContinue > $null
+	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' -WarningAction ignore > $null
 	Set-AzContext -Subscription 'Enterprise' > $null
 
 	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey' -AsPlainText 
@@ -233,7 +235,7 @@ Check Security controls
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
-	if($VMRF.RunTenableScan -eq 'No')
+	if($VMRF.RunTenableScan -ne 'No')
 	{
 		$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
 	}
@@ -272,12 +274,12 @@ Formulate Output
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
 	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
-	$Validation += $validateErpm[0] 
+	$Validation += $validateErpm[0] | select * -ErrorAction SilentlyContinue
 	$Validation += $validateErpmAdmins[0]  
 	$Validation += $validateMcafee[0]  
-	$Validation += $SplunkAuth[0] 
-	$Validation += $SplunkSearch[0]  
-	$Validation += $SplunkCheck[0] 
+	$Validation += $SplunkAuth[0] | select * -ErrorAction SilentlyContinue
+	$Validation += $SplunkSearch[0]  | select * -ErrorAction SilentlyContinue
+	$Validation += $SplunkCheck[0] | select * -ErrorAction SilentlyContinue
 	$Validation += $validateTenable[0] 
 	$Validation += $tennableVulnerabilities[0] 
 
@@ -358,9 +360,9 @@ Formulate Output
 		Output_SplunkCheck = "$(($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
-		DateTime = "$((get-date $date -format 'yyyy-MM-dd HH:mm:ss:fff'))"}
+		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-DD hh:mm:ss')), 'YYYY-MM-DD hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture)}
 
-<#============================================
+		<#============================================
 Write Output to Text file 
 #============================================#>	
 	$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
@@ -377,13 +379,9 @@ $DataTable = $sqloutput | ConvertTo-DbaDataTable
 $DataTable | Write-DbaDbTableData -SqlInstance $sqlinstance `
 -Database $sqlDatabase  `
 -Table dbo.ORR_Checks `
--KeepNulls `
 -SqlCredential $SqlCredential `
 -enableexception -verbose 
 
 
-#>
-Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sourcedbname  -SqlCredential $SqlCredential -Query 
-"Select SUSER_NAME() as 'username'" -EnableException
 
 
