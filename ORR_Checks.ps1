@@ -235,9 +235,20 @@ Check Security controls
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
+	[System.Collections.ArrayList]$tennableVulnerabilities = @()
 	if($VMRF.RunTenableScan -ne 'No')
 	{
 		$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+	} else{
+		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
+        Step = 'TenableCheck'
+        SubStep = 'Tenable Scan'
+        Status = 'Skipped'
+        FriendlyError = ""
+        PsError = ''}) > $null
+
+		$tennableVulnerabilities.add($null) > $null
+
 	}
 
 <#============================================
@@ -274,12 +285,12 @@ Formulate Output
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
 	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
-	$Validation += $validateErpm[0] | select * -ErrorAction SilentlyContinue
+	$Validation += $validateErpm[0]
 	$Validation += $validateErpmAdmins[0]  
 	$Validation += $validateMcafee[0]  
-	$Validation += $SplunkAuth[0] | select * -ErrorAction SilentlyContinue
-	$Validation += $SplunkSearch[0]  | select * -ErrorAction SilentlyContinue
-	$Validation += $SplunkCheck[0] | select * -ErrorAction SilentlyContinue
+	$Validation += $SplunkAuth[0]
+	$Validation += $SplunkSearch[0]  
+	$Validation += $SplunkCheck[0] 
 	$Validation += $validateTenable[0] 
 	$Validation += $tennableVulnerabilities[0] 
 
@@ -362,7 +373,7 @@ Formulate Output
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
 		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-DD hh:mm:ss')), 'YYYY-MM-DD hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture)}
 
-		<#============================================
+<#============================================
 Write Output to Text file 
 #============================================#>	
 	$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 

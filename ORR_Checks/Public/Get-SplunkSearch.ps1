@@ -15,50 +15,8 @@
         Date Modified   : 
 
 #>
-function get-SplunkAuth
-{
-    [CmdletBinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true)][Uri]$Url, 
-        [Parameter(Mandatory=$true)] $SplunkCredential
-    )
-    $username = $SplunkCredential.UserName
-    $password = $SplunkCredential.GetNetworkCredential().Password
-    [System.Collections.ArrayList]$Validation = @()
 
-    $Headers = @{
-        'username'=$username
-        'password'=$password
-    }
-
-    $Loginurl = $url.AbsoluteUri + "services/auth/login"
-    [regex]$sessionKey = "(?<=<sessionKey>)(.*)(?=<\/sessionKey>)"
-
-    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content   
-
-    if($Content) {
-    $Key = "Splunk " + $sessionKey.Match($content).Value
-
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Authentication'
-    Status = 'Passed'
-    FriendlyError = ''
-    PsError = ''}) > $null
-    } 
-    elseif (!$Content -OR !$Key) {
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Authentication'
-    Status = 'Failed'
-    FriendlyError = 'Could not authenticate to Splunk'
-    PsError = $PSItem.Exception}) > $null
-    }
-    return $validation, $Key
-}
-
-function get-SplunkSearch 
+function Get-SplunkSearch 
 {      
     [CmdletBinding()]
     Param
@@ -120,41 +78,3 @@ function get-SplunkSearch
     return $validation, $Sid
 }
 
-function Get-SplunkResult 
-{
-    [CmdletBinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true)][Uri]$Url,
-        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Key,
-        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Sid
-    )
-    [System.Collections.ArrayList]$Validation = @()
-
-    $JobResultUrl = $Url.AbsoluteUri + ("services/search/jobs/{0}/results?output_mode=json&count=0" -f $Sid)
-
-    $Auth = @{'Authorization'=$Key}
-
-    $Content = (Invoke-WebRequest -uri $JobResultUrl -Method Get -Headers $Auth -ContentType "application/json" -UseBasicParsing  -ErrorAction Stop).content
-
-    Start-Sleep -Seconds 5
-
-    if($Content) {
-
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk Log'
-    Status = 'Passed'
-    FriendlyError = ''
-    PsError = ''}) > $null
-    } 
-    else {
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk Log'
-    Status = 'Failed'
-    FriendlyError = 'Could not retrieve logs for Splunk'
-    PsError = $PSItem.Exception}) > $null
-    }
-    return $validation, $Content
-}

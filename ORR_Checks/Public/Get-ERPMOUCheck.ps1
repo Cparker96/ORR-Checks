@@ -21,7 +21,7 @@ Function Get-ERPMOUCheck
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
-    [System.Collections.ArrayList]$Validation = @()
+    #[System.Collections.ArrayList]$Validation = @()
     Try{
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
