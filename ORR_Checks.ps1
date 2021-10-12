@@ -194,7 +194,7 @@ Check Security controls
 	#============================================#>
 	write-host "Validating ERPM"
 
-	$validateErpm = Get-ERPMOUCheck -vmobj $VmObj
+	$validateErpmOU = Get-ERPMOUCheck -vmobj $VmObj
 
 	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj 
 
