@@ -285,7 +285,7 @@ Formulate Output
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
 	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
-	$Validation += $validateErpm[0]
+	$Validation += $validateErpmOU[0]
 	$Validation += $validateErpmAdmins[0]  
 	$Validation += $validateMcafee[0]  
 	$Validation += $SplunkAuth[0]
@@ -371,7 +371,7 @@ Formulate Output
 		Output_SplunkCheck = "$(($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
-		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-DD hh:mm:ss')), 'YYYY-MM-DD hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture)}
+		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture)}
 
 <#============================================
 Write Output to Text file 

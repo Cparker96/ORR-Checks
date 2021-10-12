@@ -22,19 +22,20 @@ To determine Readiness there are multiple data sources to check
 # Importing Modules
 To import a local module follow the below steps: 
 1. Make sure you do not already have a copy of the ORR_Check module on your computer and remove the folder in that path until the below script returns nothing. 
-    get-module ORR_Checks -listavailable
+    get-module ORR_Checks
 2. Make sure the module was also cleaned up from your session
     get-module ORR_Checks | remove-module
-3. Understand the 'paths' that powershell looks for modules
-    $env:PSModulePath.split(';')
-4. Place the ORR_Checks folder in one of those 'path' directories. This folder should contain 
-    - 2 folders named 'Public' and 'Private' which hold the functions and supporting files for the script
-    - A ORR_Checks.psm1 file which loads the contents of the 'Public' and 'Private' folder into the session
-    - A ORR_Checks.psd1 file which is the module manifest and tells powershell which functions to make available as well as other module metadata. 
-5. Import the module into your session
-    import-module ORR_Checks
+5. Import the module into your session by changing into the directory that holds the ORR_Checks folder, README.md, ORR_Checks.ps1, and VM_Request_Fields.json then importing the module in the ORR_Checks folder
+    import-module .\ORR_Checks\
 6. Make sure the version is the expected version and that the import was successful
     get-module ORR_Checks
+
+# Running the Script
+1. Make sure you are in the correct directory ORR_Checks folder, README.md, ORR_Checks.ps1, and VM_Request_Fields.json
+2. Update and save the values for VM_Request_Fields.json using valid JSON syntax. 
+3. Run ORR_Checks.ps1 by . sourcing the file while in the correct working directory
+    .\Orr_Checks.ps1
+4. Upload the text file named SERVERNAME_yyyy-MM-dd.HH.mm.txt to the Snow ticket once all steps have correctly passed. If there are any questions please reach out to CloudOps@Textron.com via email with the textfile output, Server Name, Ticket Number, and Timestamp of the run you are having trouble with. 
 
 # Server Build Process (*Assuming a normal server build*)
 1. A new server request gets created through ServiceNow - Ticket is assigned to a tech at 10M
@@ -54,11 +55,12 @@ To import a local module follow the below steps:
     - C:\Temp\"exported_text_file.txt" - refer to file name format towards the end of ORR_Checks.ps1
 9. Eventually, this file will replace the ORR word document that Cloud Ops creates in order to hand the new server over to the server owner. This text file will be attached to the ticket request that was originally submitted through ServiceNow. 
 
-
-# Things to watch for during ORR execution
-* Sometimes when you get down to the Splunk portion you will receive an error like "Get-SplunkAuth is not recognized as the name of a cmdlet..." We have no idea why this occurs
-    - To fix, go into the Get-SplunkCheck.ps1 file and ctrl + A everything and put it into your session (my hotkey for that is F8 but you might have a different one). You can rerun the splunk portion in the ORR_Checks.ps1 file (look for the splunk commented code block) - might have to rerun the process to get an accurate end result
+# Notes on ORR execution
 * If you receive any sort of error in the text file or forgot to do something on the server, you will have to rerun all of the code in ORR_Checks.ps1 
-    - might be wise to delete the text file that was created for the inaccurate one not to be confused with the updated one that it will create
+  - might be wise to delete the text file that was created for the inaccurate one not to be confused with the updated one that it will create
+* If you do not want to run the Tennable scan then you can set "RunTenableScan" : "No" in the VM_Request_Fields.Json. Any value other than "No" will result in the tenable scan running.
+* You may run the ORR_Checks.ps1 as many times as you need but to pass ORR all fields must have Passed or Failed as expected 
+  - Servers not AD joined will fail correctly on the ERPMCheck - ActiveDirectory OU Step. Please specify this is intentional in the ticket. 
+
 
 
