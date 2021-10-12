@@ -43,8 +43,6 @@ Function Get-VMCheck
 
     Try 
     {
-        $IP = Get-AzNetworkInterface -ResourceId $VmObj.NetworkProfile.NetworkInterfaces.Id
-
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
         $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
             -ScriptPath "$ScriptPath\Service_Checks.ps1" -ErrorAction Stop
@@ -94,18 +92,9 @@ Function Get-VMCheck
         $validateupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "$ScriptPath\Validate_Updates.ps1" -ErrorAction Stop
         
-        $updatelist = $validateupdates.Value.message | ConvertFrom-Csv 
+        $updatelist = $validateupdates.Value.message
 
-        if ($null -eq $updatelist)
-        {
-            $Validation.add([PSCustomObject]@{System = 'Server'
-            Step = 'VmCheck'
-            SubStep = "Updates"
-            Status = 'Failed'
-            FriendlyError = 'There are still updates that need to be applied'
-            PsError = $PSItem.Exception}) > $null 
-        }
-        else 
+        if (($updatelist -eq '') -or ($null -eq $updatelist))
         {
             $Validation.add([PSCustomObject]@{System = 'Server'
             Step = 'VmCheck'
@@ -113,6 +102,15 @@ Function Get-VMCheck
             Status = 'Passed'
             FriendlyError = ''
             PsError = ''}) > $null 
+        }
+        else 
+        {
+            $Validation.add([PSCustomObject]@{System = 'Server'
+            Step = 'VmCheck'
+            SubStep = "Updates"
+            Status = 'Failed'
+            FriendlyError = 'There are still updates that need to be applied'
+            PsError = $PSItem.Exception}) > $null 
         }
     }
     catch 
