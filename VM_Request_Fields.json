@@ -1,15 +1,11 @@
 {
-    "Hostname" : "TXAINFAZU940",
-    "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "TIS-UTILITYEASTUS2",
-    "Region" : "EastUS2",
-    "Virtual Network" : "Bla",
-    "Operating System" : "Windows Server 2016 Datacenter",
-    "Datavail Support" : "",
-    "Date Created" : "04/15/2020",
-    "Requestor" : "clarvin@textron.com",
-    "Approver" : "cparker@textron.com",
-    "Created By" : "clarvin@textron.com",
-    "Ticket Number" : "TASK0284785"
+    "Hostname" : "TXTAPPGOV007",
+    "Environment" : "AzureUSGovernment",
+    "Subscription" : "AGC_Enterprise",
+    "Resource Group" : "TIS-IAM-GOV",
+    "Operating System" : "",
+    "Requestor" : "Christopher Reilly",
+    "Created By" : "Ricky Barbour",
+    "Ticket Number" : "SCTASK0014780", 
+    "RunTenableScan" : "Yes"
 }

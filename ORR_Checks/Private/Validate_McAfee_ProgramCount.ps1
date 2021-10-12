@@ -1,0 +1,1 @@
+Get-WmiObject -Class Win32_Product | select Name | where {$_.Name -like "*McAfee*"} | ConvertTo-Csv
