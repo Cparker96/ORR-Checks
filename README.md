@@ -24,14 +24,14 @@ To determine Readiness there are multiple data sources to check
 ## Importing Modules
 To import a local module follow the below steps: 
 1. Download the ORR Check files from the Azure Blob and download the file with the most current datetime stamp.
-2. Make sure you do not already have a copy of the ORR_Check module on your computer and remove the folder in that path until the below script returns nothing. 
-    get-module ORR_Checks
-3. Make sure the module was also cleaned up from your session
-    get-module ORR_Checks | remove-module
-4. Import the module into your session by changing into the directory that holds the ORR_Checks folder, README.md, ORR_Checks.ps1, and VM_Request_Fields.json then importing the module in the ORR_Checks folder
-    import-module .\ORR_Checks\
-5. Make sure the version is the expected version and that the import was successful
-    get-module ORR_Checks
+2. Make sure you do not already have a copy of the ORR_Check module on your computer and remove the folder in that path until the below script returns nothing.<br> 
+> get-module ORR_Checks
+3. Make sure the module was also cleaned up from your session<br>
+> get-module ORR_Checks | remove-module
+4. Import the module into your session by changing into the directory that holds the ORR_Checks folder, README.md, ORR_Checks.ps1, and VM_Request_Fields.json then importing the module in the ORR_Checks folder<br>
+> import-module .\ORR_Checks\
+5. Make sure the version is the expected version and that the import was successful.<br>
+> get-module ORR_Checks
 
 ## Running the Script
 1. Make sure you are in the correct directory ORR_Checks folder, README.md, ORR_Checks.ps1, and VM_Request_Fields.json
