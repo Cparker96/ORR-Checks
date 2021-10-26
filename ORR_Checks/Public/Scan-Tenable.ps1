@@ -103,25 +103,6 @@ Function Scan-Tenable
                     $removeagent = Invoke-RestMethod -Uri $resource -Method Delete -Headers $headers
                     Write-Host $agentinfo.name "was removed from" $scan.name -ForegroundColor Green
 
-                    if ($null -eq $vulns)
-                    {
-                        $validation.Add([PSCustomObject]@{System = 'Tenable'
-                        Step = 'TenableCheck'
-                        SubStep = 'Tenable Scan'
-                        Status = 'Passed'
-                        FriendlyError = "" 
-                        PsError = ''}) > $null
-                    } else {
-                        $validation.Add([PSCustomObject]@{System = 'Tenable'
-                        Step = 'TenableCheck'
-                        SubStep = 'Tenable Scan'
-                        Status = 'Failed'
-                        FriendlyError = "There were one or multiple vulnerabilities found in the scan results. Please troubleshoot" 
-                        PsError = $PSItem.Exception}) > $null
-
-                        return $validation
-                    }
-
                     #add a row to the vailidation for correct configuration
                     $validation.Add([PSCustomObject]@{System = 'Tenable'
                     Step = 'TenableCheck'
