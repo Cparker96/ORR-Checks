@@ -23,7 +23,7 @@ Function Get-McAfeeCheck
     [System.Collections.ArrayList]$Validation = @()
 
     <#==================================================
-    Validate services that should be running
+    Validate agent is installed
     #===================================================#>
     Try{
         # need to validate that not only the agent is installed, need Endpoint Security, Firewall, etc.
@@ -32,12 +32,12 @@ Function Get-McAfeeCheck
 
         $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
-        if ($mcafeeprograms.Count -lt 4) {
+        if ($mcafeeprograms.Name -ne 'McAfee Agent') {
             $validation.Add([PSCustomObject]@{System = 'Server'
             Step = 'McAfeeCheck'
             SubStep = 'Agent Configuration'
             Status = 'Failed'
-            FriendlyError = "One or more parts of McAfee are missing. Please install all parts"
+            FriendlyError = "McAfee Agent is not configured for this server. Please install it"
             PsError = ''}) > $null
         }else{
             $validation.Add([PSCustomObject]@{System = 'Server'
