@@ -230,15 +230,15 @@ Check Security controls
 	$validateTenable = @()
 
 	write-host "Validating Tenable"
-	$validateTenable = Get-TenableCheck -vmobj $VmObj -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
+	$validateTenable = Get-TenableCheck -vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey
 
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
-	[System.Collections.ArrayList]$tennableVulnerabilities = @()
 	if($VMRF.RunTenableScan -ne 'No')
 	{
-		$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+		[System.Collections.ArrayList]$tennableVulnerabilities = @()
+		$tennableVulnerabilities = Scan-Tenable -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo
 	} else{
 		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
