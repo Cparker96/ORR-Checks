@@ -1,0 +1,11 @@
+{
+    "Hostname" : "some_server_name",
+    "Environment" : "AzureCloud",
+    "Subscription" : "some_subscription",
+    "Resource Group" : "some_resource_group",
+    "Operating System" : "some_OS",
+    "Requestor" : "some_requestor",
+    "Created By" : "some_creator",
+    "Ticket Number" : "some_ticket_number", 
+    "RunTenableScan" : "Yes"
+}

@@ -1,0 +1,1 @@
+get-localgroupmember -name "Administrators" | ConvertTo-Csv
