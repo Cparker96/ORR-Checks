@@ -18,18 +18,19 @@
         FunctionName    : get-AzureCheck
         Created by      : Claire Larvin
         Date Coded      : 04/16/2021
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : Claire Larvin
+        Date Modified   : 1/26/2022
 
 #>
 Function Get-AzureCheck{
     Param(
         [parameter(Position = 0, Mandatory=$true)] [String] $VmName,
-        [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureCloud')] [String] $Environment,
+        [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureUSGovernment_Old', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
-        [parameter(Position=3, Mandatory=$false)] [String] $Region,
-        [parameter(Position=3, Mandatory=$false)] [String] $Network
+        [parameter(Position=4, Mandatory=$false)] [String] $Region,
+        [parameter(Position=5, Mandatory=$false)] [String] $Network,
+        [parameter(Position=6, Mandatory=$false)] $GovAccount
         )
 
     [System.Collections.ArrayList]$Validation = @()
@@ -45,18 +46,32 @@ Function Get-AzureCheck{
 
     <#============================================
     Login to Azure
+    # Public Cloud - "AzureCloud" 
+    # Azure Gov - "AzureUSGovernment_Old"
+    # Azure Gov GCC High - "AzureUSGovernment" 
     #============================================#>
 
     # AD tenant is required when loggin in with an app registration
-    if($Environment -eq 'AzureCloud'){$tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'}
-    else{$tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'}
-    
+
+
     #disconnect previous connections and log in with individual access
     Try{
         if((get-azcontext -erroraction stop).Environment.name -ne $Environment)
         {
             disconnect-AzAccount > $null
-            connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+
+            if($Environment -eq 'AzureCloud'){
+                $tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'
+                connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+            }
+            elseif($Environment -eq 'AzureUSGovernment_Old'){
+                $tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'
+                connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+            }
+            elseif($Environment -eq 'AzureUSGovernment'){
+                $tenant = 'b347614d-8a51-4dfe-8bf7-16d51e6f6db8'
+                connect-AzAccount -Credential $GovAccount -Environment $Environment -tenant $tenant -ServicePrincipal -ErrorAction Stop -WarningAction Ignore >$null
+            }     
         }
     }
     Catch{
@@ -184,6 +199,8 @@ Function Get-AzureCheck{
     <#============================================
     Check permissions
     #============================================#>
+    If($Environment -ne 'AzureUSGovernment')
+    {
     $role = @()
     $role = Get-AzRoleAssignment -RoleDefinitionName 'Contributor' -Scope $vm.Id 
     $role += Get-AzRoleAssignment -RoleDefinitionName 'Owner' -Scope $vm.Id
@@ -191,7 +208,7 @@ Function Get-AzureCheck{
     $elevatedUsers = @()
     $elevatedUsers = $role.SignInName 
     $elevatedUsers += ($role | where objecttype -eq 'Group' | %{get-azadgroupmember -GroupObjectId $_.ObjectId} | select userPrincipalName).userPrincipalName
-
+    $elevatedUsers += "768ca4de-5c94-4879-9c74-be8d0217ff01"
     #if the contributor role isn't checked out then fail
     if($azContext.Account.Id -notin $elevatedUsers){
         $Validation.add([PSCustomObject]@{System = 'Azure'
@@ -201,6 +218,14 @@ Function Get-AzureCheck{
         FriendlyError = "Please Check out your Contributor Role over scope $($vm.id)"
         PsError = ''}) > $null
     }
+    else {
+        $Validation.add([PSCustomObject]@{System = 'Azure'
+        Step = 'AzureCheck'
+        SubStep = 'Access'
+        Status = 'Passed'
+        FriendlyError = ""
+        PsError = ''}) > $null
+    }}
     else {
         $Validation.add([PSCustomObject]@{System = 'Azure'
         Step = 'AzureCheck'
