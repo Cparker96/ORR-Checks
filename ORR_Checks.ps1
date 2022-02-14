@@ -356,7 +356,7 @@ Formulate Output
 		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
 		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
-		TicketNumber = $($HostInformation.TicketNumber);
+		TicketNumber = $($HostInformation."Ticket Number");
 		Hostname = $($HostInformation.Hostname)}
 
 <#============================================

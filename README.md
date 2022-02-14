@@ -64,13 +64,20 @@ get-module ORR_Checks
 
 ## Notes on ORR execution
 * If you receive any sort of error in the text file or forgot to do something on the server, you will have to rerun all of the code in ORR_Checks.ps1.
+
 * If you do not want to run the Tennable scan then you can set the following value in the VM_Request_Fields.Json.<br>
 ```json
 "RunTenableScan" : "No" 
 ```
 Any value other than "No" will result in the tenable scan running.
+
 * You may run the ORR_Checks.ps1 as many times as you need but to pass ORR all fields must have Passed or Failed as expected 
   - Servers not AD joined will fail correctly on the ERPMCheck - ActiveDirectory OU Step. Please specify this is intentional in the ticket. 
+
+* In VM_Request_Fields.Json the "Environment" parameter must be one of the following values : 
+ - Public Cloud - "AzureCloud" 
+ - Azure Gov - "AzureUSGovernment_Old"
+ - Azure Gov GCC High - "AzureUSGovernment"
 
 ## Need help?
 If there are any questions please reach out to CloudOps@Textron.com via email with the textfile output, Server Name, Ticket Number, and Timestamp of the run you are having trouble with. 
