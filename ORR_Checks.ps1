@@ -254,8 +254,8 @@ Formulate Output
 	@{n='Disk Information'; e={$vmobj.StorageProfile.DataDisks | select name, disksizeGB}}, 
 	@{n='Date Created'; e={get-date -format 'MM/dd/yyyy'}},
 	Requestor,
-	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
-	"Created By",
+	Approver,
+	'Created By',
 	'Ticket Number') 
 
 
