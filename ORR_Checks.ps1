@@ -89,9 +89,7 @@ Try
 {
 	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
 }
-catch{ write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)" -erroraction stop }
-
-
+catch{ write-error "Could not load VM_Request_Fields.json `r`n $($_.Exception)" -erroraction stop }
 
 <#============================================
 Get Credentials
@@ -141,9 +139,6 @@ Check VM in Azure
 		Write-Error ($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].FriendlyError -ErrorAction Stop
 	}
 
-
-
-
 <#============================================
 Log into VM and do pre domain join checks
 #============================================#>
@@ -161,7 +156,6 @@ Log into VM and do pre domain join checks
 	}else{
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
-
 
 <#============================================
 Check Security controls
@@ -193,21 +187,22 @@ Check Security controls
 	<#============================================
 	Splunk
 	#============================================#>
+
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
 
 	$splunkauth = Get-SplunkAuth -url $Url -SplunkCredential $SplunkCredential
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Search"
 
 	$splunksearch = Get-SplunkSearch -VmObj $VmObj -Url $url -Key $splunkauth[1]
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Result"
 
 	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	<#============================================
 	Tenable
@@ -221,8 +216,9 @@ Check Security controls
 	$agentinfo = $validateTenable[1]
 
 	[System.Collections.ArrayList]$tennableVulnerabilities = @()
-	if($VMRF.RunTenableScan -ne 'No'){
-		$tennableVulnerabilities += Scan-Tenable -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo
+	if($VMRF.RunTenableScan -eq 'Yes')
+	{
+		$tennableVulnerabilities = Scan-Tenable -Vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
 	} else{
 		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
@@ -232,7 +228,6 @@ Check Security controls
         PsError = ''}) > $null
 
 		$tennableVulnerabilities.add($null) > $null
-
 	}
 
 <#============================================

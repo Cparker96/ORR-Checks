@@ -1,8 +1,8 @@
 {
-    "Hostname" : "TXACVTGOV009",
-    "Environment" : "AzureUsGovernment",
-    "Subscription" : "AGC_Enterprise",
-    "Resource Group" : "Enterprise-COMMVAULT",
+    "Hostname" : "TXAIDCAZU026",
+    "Environment" : "AzureCloud",
+    "Subscription" : "Enterprise",
+    "Resource Group" : "ENT-IAMDOMAINCONTROLLERSEASTUS2-PROD",
     "Operating System" : "",
     "Requestor" : "Kevin Norlander",
     "Created By" : "Claire Larvin",
