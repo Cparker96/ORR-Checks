@@ -361,9 +361,20 @@ Formulate Output
 
 <#============================================
 Write Output to Text file 
-#============================================#>	
+============================================#>	
+$prevRendering = $PSStyle.OutputRendering
+$PSStyle.OutputRendering = 'PlainText'
+
+try {
 	$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
 	$output | Out-File "c:\temp\$filename.txt"
+}
+catch {
+	$PSItem.Exception
+}
+$PSStyle.OutputRendering = $prevRendering
+
+	
 
 <#============================================
 Write Output to database
