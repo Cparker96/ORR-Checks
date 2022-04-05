@@ -27,6 +27,11 @@ function Get-SplunkSearch
     )
     [System.Collections.ArrayList]$Validation = @()
 
+    if ($VmObj.Name -like "*IDC*") #if a domain controller - will always be windows
+    {
+        $Searchstring = "search index=win_event_dc* host=$($VmObj.Name) earliest=-60m | head 1"
+    }
+
     #change the search string based on the OS type
     If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
     {
@@ -57,24 +62,29 @@ function Get-SplunkSearch
 
     $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
 
-    if($Content) {
-    $Sid = $Jobsid.Match($Content).Value.ToString()
-    
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk search'
-    Status = 'Passed'
-    FriendlyError = ''
-    PsError = ''}) > $null
+    if($Content) 
+    {
+        $Sid = $Jobsid.Match($Content).Value.ToString()
+        
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Splunk search'
+        Status = 'Passed'
+        FriendlyError = ''
+        PsError = ''}) > $null
     } 
-    elseif (!$Content -OR !$Sid) {
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk search'
-    Status = 'Failed'
-    FriendlyError = 'Could not retrieve Splunk search'
-    PsError = $PSItem.Exception}) > $null
+    elseif (!$Content -OR !$Sid) 
+    {
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Splunk search'
+        Status = 'Failed'
+        FriendlyError = 'Could not retrieve Splunk search'
+        PsError = $PSItem.Exception}) > $null
     }
+
+    Start-Sleep -Seconds 20
+    
     return $validation, $Sid
 }
 

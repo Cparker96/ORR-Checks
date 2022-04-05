@@ -35,25 +35,35 @@ function Get-SplunkAuth
     $Loginurl = $url.AbsoluteUri + "services/auth/login"
     [regex]$sessionKey = "(?<=<sessionKey>)(.*)(?=<\/sessionKey>)"
 
-    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content   
+    $authcounter = 0
 
-    if($Content) {
-    $Key = "Splunk " + $sessionKey.Match($content).Value
+    do {
+    Write-Host 'Authenticating to Splunk'
+    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop -Verbose)
+    $authcounter++
+    Start-Sleep -Seconds 10
+    } until (($content.StatusCode -eq 200) -or ($authcounter -eq 5))
 
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Authentication'
-    Status = 'Passed'
-    FriendlyError = ''
-    PsError = ''}) > $null
-    } 
-    elseif (!$Content -OR !$Key) {
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Authentication'
-    Status = 'Failed'
-    FriendlyError = 'Could not authenticate to Splunk'
-    PsError = $PSItem.Exception}) > $null
+    if ($Content) 
+    {
+        $Key = "Splunk " + $sessionKey.Match($content).Value
+
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Authentication'
+        Status = 'Passed'
+        FriendlyError = ''
+        PsError = ''}) > $null
+    } elseif (!$Content -OR !$Key) {
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Authentication'
+        Status = 'Failed'
+        FriendlyError = 'Could not authenticate to Splunk'
+        PsError = $PSItem.Exception}) > $null
     }
+
+    Start-Sleep -Seconds 20
+    
     return $validation, $Key
 }
