@@ -43,7 +43,7 @@ Function Get-TenableCheck
         # grab the agents in the agent group 'some_scan_group' details
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners/1/agent-groups/'agent_group_ID'/agents?offset=5001&limit=5000"
+        $resource = "https://cloud.tenable.com/scanners/'scanner_id'/agent-groups/'agent_group_ID'/agents?offset=5001&limit=5000"
         $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
         $agents2 = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).agents
 
