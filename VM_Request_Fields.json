@@ -1,11 +1,11 @@
 {
-    "Hostname" : "TXAIDCAZU026",
+    "Hostname" : "TXKAPPAZU815",
     "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "ENT-IAMDOMAINCONTROLLERSEASTUS2-PROD",
+    "Subscription" : "Kautex",
+    "Resource Group" : "TRY-Kronos-DevTest",
     "Operating System" : "",
     "Requestor" : "Kevin Norlander",
     "Created By" : "Claire Larvin",
     "Ticket Number" : "SCTASK0019827", 
-    "RunTenableScan" : "Yes"
+    "RunTenableScan" : "No"
 }
