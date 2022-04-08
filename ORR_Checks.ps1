@@ -1,76 +1,59 @@
 
-<#============================================
-Manual process notes
-	1) Get list of server builds from excel sheet
-	2) Azure
-		a. Check tags (sniff test)
-			i. Backups 60
-			ii. BU - correct
-			iii. Instance matches naming standard
-			iv. Service level
-			v. Patch group if _Automation_ - 10M is on the hook
-		b. Naming standard (in powerDMS)
-			i. PROD 000-799
-			ii. Dev 800-899
-			iii. Test 900-999
-		c. Server Config
-			i. Check disks are associated
-			ii. VM running
-	3) Remote in
-		a. Not domain joined - use IP to remote in
-			i. Use IP/10MOnboarding password
-		b. Are Services running
-			i. Tennable
-			ii. Microsoft monitoring agent
-			iii. Splunk
-			iv. Mcafee
-		c. Domain Join in AD
-			i. Create AD object first in right OU
-				1) (OU in ticket
-					a) If TXA Textron>corportate>USA>FEINsharedacrossTextron>servers>Azure (or AzureUSGov)
-				2) New object >select user as _a
-				3) Properties > member of  wsus_gpo_azure_universal (applies group policy)
-		d. System info> advanced > computername >change to txt.textron.com
-			i. Restart later
-		e. Check for updates
-			i. If errror then open admin powershell session > sconfig >6) download and upload updates> all updates
-		f. Run script in devops TIS-0RR-Server-builds>window build scripts>provisionin scripts>Post_Domain_Join_configs.ps1 (must already be domain joined and run as admin)
-			i. ADM_SRV_AZU - TIS Cloudops access
-			ii. Svc_hq_erpm_svc - ERMP has access
-			iii. Add admins from ticket as well (_a)
-		g. Check that disks are mounted on the server
-		h. Restart server
-	4) Fill out ORR packet ( no order)
-		a. fills out server information based on Server Tags - not from original ticket
-			i. Approver can be infered from admin access - approver is their boss?
-			ii. Save on sharepoint > cloud Ops > Azure > delivery packets
-		b. Splunk.textron.com
-			i. Index=win* host=SERVERNAME
-		c. Mcafee/EPO (slow system)
-			i. Systemtree>This group and all subgroups : SERVERNAME 
-				1) 1 record
-					a) SERVERNAME and green banner
-		d. Tenable
-			i. Classic interface >scans>agents> SERVERNAME
-				1) Online
-				2) In AzureOnboarding group
-				3) In BU group
-				4) (run scan) Play the AzureVMProvisioning group - will run a scan against all servers (will take 1-1.5 hours to complete so wait till you have done all the ORR's for the day)
-					1) Check it is completed > assests> SERVERNAME
-					2) Resolve veunrabilities
-						a) Mcafee Agent 5.6 and Mcafeww endpoint security for windows is ok - WE are behind on Mcafee version
-		e. ERPM
-			i. RDP into server as admin 
-				1) Provising script ERPM_varification.ps1
-					a) OU path in AD
-					b) AD groups on server
-						i. ADM_SRV_AZU - TIS Cloudops access
-						ii. Svc_hq_erpm_svc - ERMP has access
-						iii. Add admins from ticket as well (_a)
+<#
+    .SYNOPSIS
+        The main file to run the Server Operational Readdiness Review (ORR) process
+    .DESCRIPTION
+        the Ps1 that actually runs the ORR workflow and outputs the validation steps
+	.PARAMETER Hostname
+		The Server name of the Server being ORR'd
+    .PARAMETER Environment
+		Specifies the Cloud platform and tennant to connect to
+			Public Cloud - "AzureCloud" 
+			Azure Gov - "AzureUSGovernment_Old"
+			Azure Gov GCC High - "AzureUSGovernment" 
+    .PARAMETER Subscription
+		The friendly name of the subscription where the VM was built
+    .PARAMETER Resource Group
+		The Resource group name where the VM was built
+    .PARAMETER Operating System
+		Can be left null but a simple Windows or Linux is prefered
+    .PARAMETER Requestor
+		The name of the VM requestor
+    .PARAMETER Created By
+		The name of the IT professional who did the build
+    .PARAMETER Ticket Number
+		The Snow ticket that stared the build process and where the requirements and approvals are sourced 
+    .PARAMETER RunTenableScan
+		A quick way to not run the tennable scan (aprox 1 hour) for testing purposes. 
+		Approved Values
+			"Yes"
+			"No"
+
+    .EXAMPLE
+		{
+			"Hostname" : "TXAINFAZU021",
+			"Environment" : "AzureCloud",
+			"Subscription" : "Enterprise",
+			"Resource Group" : "308-Utility",
+			"Operating System" : "",
+			"Requestor" : "Christopher Reilly",
+			"Created By" : "Ricky Barbour",
+			"Ticket Number" : "SCTASK0014780", 
+			"RunTenableScan" : "Yes"
+		}       
+
+    .NOTES
+        Created by      : Cody Parker and Claire Larvin
+        Date Coded      : 04/16/2021
+        Modified by     : Claire Larvin
+        Date Modified   : 1/26/2022
 
 Links:
 	Nuget powershell module 
 		https://docs.microsoft.com/en-us/azure/devops/artifacts/tutorials/private-powershell-library?view=azure-devops
+#>
+
+
 #============================================#>
 
 
@@ -106,9 +89,7 @@ Try
 {
 	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
 }
-catch{ write-error "Could not load VM_Reques_Fields.json `r`n $($_.Exception)" -erroraction stop }
-
-
+catch{ write-error "Could not load VM_Request_Fields.json `r`n $($_.Exception)" -erroraction stop }
 
 <#============================================
 Get Credentials
@@ -119,10 +100,11 @@ Try{
 	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' -WarningAction ignore > $null
 	Set-AzContext -Subscription 'Enterprise' > $null
 
-	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey' -AsPlainText 
-	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey' -AsPlainText 
+	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey-10m' -AsPlainText 
+	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey-10m' -AsPlainText 
     $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
 	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
+	$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
 }
 Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
@@ -142,7 +124,8 @@ Check VM in Azure
 	$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 	-Environment $VmRF.Environment `
 	-Subscription $VmRF.Subscription `
-	-ResourceGroup $VmRF.'Resource Group' 
+	-ResourceGroup $VmRF.'Resource Group' `
+	-GovAccount $GovAccount
 
 	#seperate the VM object from the azCheck object
 	if($null -eq ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})){
@@ -155,9 +138,6 @@ Check VM in Azure
 	if(($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].status -eq 'failed'){
 		Write-Error ($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].FriendlyError -ErrorAction Stop
 	}
-
-
-
 
 <#============================================
 Log into VM and do pre domain join checks
@@ -176,7 +156,6 @@ Log into VM and do pre domain join checks
 	}else{
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
-
 
 <#============================================
 Check Security controls
@@ -208,21 +187,22 @@ Check Security controls
 	<#============================================
 	Splunk
 	#============================================#>
+
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
 
 	$splunkauth = Get-SplunkAuth -url $Url -SplunkCredential $SplunkCredential
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Search"
 
 	$splunksearch = Get-SplunkSearch -VmObj $VmObj -Url $url -Key $splunkauth[1]
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Result"
 
 	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
-	Start-Sleep -Seconds 5
+	Start-Sleep -Seconds 30
 
 	<#============================================
 	Tenable
@@ -230,15 +210,15 @@ Check Security controls
 	$validateTenable = @()
 
 	write-host "Validating Tenable"
-	$validateTenable = Get-TenableCheck -vmobj $VmObj -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey
+	$validateTenable = Get-TenableCheck -vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey
 
 	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
 	[System.Collections.ArrayList]$tennableVulnerabilities = @()
-	if($VMRF.RunTenableScan -ne 'No')
+	if($VMRF.RunTenableScan -eq 'Yes')
 	{
-		$tennableVulnerabilities = Scan-Tenable -AccessKey $TenableAccessKey -SecretKey $TenableSecretKey -agentInfo $agentinfo
+		$tennableVulnerabilities = Scan-Tenable -Vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
 	} else{
 		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
@@ -248,7 +228,6 @@ Check Security controls
         PsError = ''}) > $null
 
 		$tennableVulnerabilities.add($null) > $null
-
 	}
 
 <#============================================
@@ -270,8 +249,8 @@ Formulate Output
 	@{n='Disk Information'; e={$vmobj.StorageProfile.DataDisks | select name, disksizeGB}}, 
 	@{n='Date Created'; e={get-date -format 'MM/dd/yyyy'}},
 	Requestor,
-	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
-	"Created By",
+	Approver,
+	'Created By',
 	'Ticket Number') 
 
 
@@ -371,13 +350,26 @@ Formulate Output
 		Output_SplunkCheck = "$(($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
-		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture)}
+		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
+		TicketNumber = $($HostInformation."Ticket Number");
+		Hostname = $($HostInformation.Hostname)}
 
 <#============================================
 Write Output to Text file 
-#============================================#>	
+============================================#>	
+$prevRendering = $PSStyle.OutputRendering
+$PSStyle.OutputRendering = 'PlainText'
+
+try {
 	$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
 	$output | Out-File "c:\temp\$filename.txt"
+}
+catch {
+	$PSItem.Exception
+}
+$PSStyle.OutputRendering = $prevRendering
+
+	
 
 <#============================================
 Write Output to database

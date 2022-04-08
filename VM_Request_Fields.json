@@ -1,11 +1,11 @@
 {
-    "Hostname" : "TXAINFAZU021",
+    "Hostname" : "TXAIDCAZU026",
     "Environment" : "AzureCloud",
     "Subscription" : "Enterprise",
-    "Resource Group" : "308-Utility",
+    "Resource Group" : "ENT-IAMDOMAINCONTROLLERSEASTUS2-PROD",
     "Operating System" : "",
-    "Requestor" : "Christopher Reilly",
-    "Created By" : "Ricky Barbour",
-    "Ticket Number" : "SCTASK0014780", 
+    "Requestor" : "Kevin Norlander",
+    "Created By" : "Claire Larvin",
+    "Ticket Number" : "SCTASK0019827", 
     "RunTenableScan" : "Yes"
 }

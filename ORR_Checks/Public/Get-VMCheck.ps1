@@ -35,12 +35,6 @@ Function Get-VMCheck
     $sqlInstance = 'txadbsazu001.database.windows.net'
     $sourcedbname = 'TIS_CMDB'
 
-   
-    
-    <#==================================================
-    Validate against services that should be running
-    #===================================================#>
-
     Try 
     {
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 

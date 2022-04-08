@@ -32,24 +32,27 @@ function Get-SplunkResult
 
     $Content = (Invoke-WebRequest -uri $JobResultUrl -Method Get -Headers $Auth -ContentType "application/json" -UseBasicParsing  -ErrorAction Stop).content
 
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 20
 
-    if($Content) {
-
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk Log'
-    Status = 'Passed'
-    FriendlyError = ''
-    PsError = ''}) > $null
+    if($Content) 
+    {
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Splunk Log'
+        Status = 'Passed'
+        FriendlyError = ''
+        PsError = ''}) > $null
     } 
     else {
-    $validation.Add([PSCustomObject]@{System = 'Splunk'
-    Step = 'SplunkCheck'
-    SubStep = 'Validate Splunk Log'
-    Status = 'Failed'
-    FriendlyError = 'Could not retrieve logs for Splunk'
-    PsError = $PSItem.Exception}) > $null
+        $validation.Add([PSCustomObject]@{System = 'Splunk'
+        Step = 'SplunkCheck'
+        SubStep = 'Validate Splunk Log'
+        Status = 'Failed'
+        FriendlyError = 'Could not retrieve logs for Splunk'
+        PsError = $PSItem.Exception}) > $null
     }
+    
+    Start-Sleep -Seconds 20
+
     return $validation, $Content
 }

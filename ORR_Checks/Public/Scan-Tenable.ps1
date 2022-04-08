@@ -19,8 +19,8 @@ Function Scan-Tenable
 {
     Param
     (
-        [parameter(Position = 0, Mandatory=$true)] [String] $AccessKey,
-        [parameter(Position = 1, Mandatory=$true)] [String] $SecretKey,
+        [parameter(Position = 0, Mandatory=$true)] [String] $TenableAccessKey,
+        [parameter(Position = 1, Mandatory=$true)] [String] $TenableSecretKey,
         [parameter(Position = 2, Mandatory=$false)] $agentinfo
     )
     [System.Collections.ArrayList]$Validation = @()
@@ -39,7 +39,7 @@ Function Scan-Tenable
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $resource = "https://cloud.tenable.com/scans"
-        $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+        $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
         $onboardingscans = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scans | where {$_.name -like "*AzureOnBoarding*"} | sort name
 
         foreach ($scan in $onboardingscans)
@@ -48,14 +48,14 @@ Function Scan-Tenable
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
             $resource = "https://cloud.tenable.com/scanners/1/agent-groups"
-            $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+            $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $agentgroup = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).groups | where {$_.name -eq $scan.name}
 
             # get the latest scan status
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
             $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
-            $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+            $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $status = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).status
 
             if (($status -notin 'running','pending'))
@@ -63,14 +63,14 @@ Function Scan-Tenable
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                 $resource = "https://cloud.tenable.com/scanners/1/agent-groups/$($agentgroup.id)/agents/$($agentinfo.id)"
-                $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                 $addagent = Invoke-RestMethod -Uri $resource -Method Put -Headers $headers
 
                 # launch the scan
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                 $resource = "https://cloud.tenable.com/scans/$($scan.id)/launch"
-                $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                 $launchscan = Invoke-RestMethod -Uri $resource -Method Post -Headers $headers 
 
                 Write-Host $scan.name "scan launched..." -ForegroundColor Green
@@ -82,7 +82,7 @@ Function Scan-Tenable
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                 $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
-                $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                 $scanstatus = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers 
                 } until ($scanstatus.status -notin ('pending', 'running'))
 
@@ -92,16 +92,35 @@ Function Scan-Tenable
                     $headers = $null
                     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                     $resource = "https://cloud.tenable.com/scans/$($scan.id)"
-                    $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+                    $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                     $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*")}
                     
                     # remove agent from agent group
                     $headers = $null
                     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                     $resource = "https://cloud.tenable.com/scanners/1/agent-groups/$($agentgroup.id)/agents/$($agentinfo.id)"
-                    $headers.Add("X-ApiKeys", "accessKey=$accessKey; secretKey=$secretKey")
+                    $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                     $removeagent = Invoke-RestMethod -Uri $resource -Method Delete -Headers $headers
                     Write-Host $agentinfo.name "was removed from" $scan.name -ForegroundColor Green
+
+                    #if ($null -eq $vulns)
+                    #{
+                    #    $validation.Add([PSCustomObject]@{System = 'Tenable'
+                    #    Step = 'TenableCheck'
+                    #    SubStep = 'Tenable Scan'
+                    #   Status = 'Passed'
+                    #    FriendlyError = "" 
+                    #    PsError = ''}) > $null
+                    #} else {
+                    #    $validation.Add([PSCustomObject]@{System = 'Tenable'
+                    #    Step = 'TenableCheck'
+                    #    SubStep = 'Tenable Scan'
+                    #    Status = 'Failed'
+                    #    FriendlyError = "There were one or multiple vulnerabilities found in the scan results. Please troubleshoot" 
+                    #    PsError = $PSItem.Exception}) > $null
+                    #
+                    #    return $validation
+                    #}
 
                     #add a row to the vailidation for correct configuration
                     $validation.Add([PSCustomObject]@{System = 'Tenable'
