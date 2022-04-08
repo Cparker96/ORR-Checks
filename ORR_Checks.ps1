@@ -218,7 +218,7 @@ Check Security controls
 	[System.Collections.ArrayList]$tennableVulnerabilities = @()
 	if($VMRF.RunTenableScan -eq 'Yes')
 	{
-		$tennableVulnerabilities = Scan-Tenable -Vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
+		$tennableVulnerabilities = Scan-Tenable -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
 	} else{
 		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
