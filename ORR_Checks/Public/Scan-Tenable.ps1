@@ -100,21 +100,15 @@ Function Scan-Tenable
         try 
         {
             # get the latest scan status
+            Write-Host "Getting the status for $($scan.name)"
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
             $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $prescanstatus = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).status
 
-            if (($prescanstatus -ne 'pending') -or ($prescanstatus -ne 'running'))
+            if (($prescanstatus -eq 'pending') -or ($prescanstatus -eq 'running'))
             {
-                $Validation.Add([PSCustomObject]@{System = 'Tenable' 
-                Step = 'TenableCheck'
-                Substep = 'Pre-Scan status'
-                Status = 'Passed'
-                FriendlyError = ""
-                PsError = ''}) > $null 
-            } else {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
                 Step = 'TenableCheck'
                 Substep = 'Pre-Scan status'
@@ -122,7 +116,16 @@ Function Scan-Tenable
                 FriendlyError = "$($scan.name) is not ready to scan yet. Checking the next one"
                 PsError = $PSItem.Exception}) > $null
 
+                Write-Host "$($scan.name) is not ready to scan yet. Checking the next one." -ForegroundColor Yellow
                 break
+
+            } else {
+                $Validation.Add([PSCustomObject]@{System = 'Tenable' 
+                Step = 'TenableCheck'
+                Substep = 'Pre-Scan status'
+                Status = 'Passed'
+                FriendlyError = ""
+                PsError = ''}) > $null 
             }
         } catch {
             $Validation.Add([PSCustomObject]@{System = 'Tenable' 
@@ -151,7 +154,7 @@ Function Scan-Tenable
             $changetarget = Invoke-RestMethod -Uri $resource -ContentType "application/json" -Method Put -Headers $headers -Body $body
 
             # giving the API time to visually update for confirmation
-            Start-Sleep -Seconds 45
+            Start-Sleep -Seconds 60
 
             if ($changetarget.custom_targets -eq $targetip)
             {
@@ -186,9 +189,9 @@ Function Scan-Tenable
             # launch the scan
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            $resource = "https://cloud.tenable.com/scans/$($scan.id)/launch"
+            $resource = "https://cloud.tenable.com/scans/$($scan.schedule_uuid)/launch"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-            $launchscan = Invoke-RestMethod -Uri $resource -Method Post -Headers $headers 
+            $launchscan = Invoke-RestMethod -Uri $resource -Method Post -Headers $headers
 
             # giving the API time to visually update for confirmation
             Start-Sleep -Seconds 20
@@ -202,7 +205,7 @@ Function Scan-Tenable
                 FriendlyError = ''
                 PsError = ''}) > $null 
 
-                Write-Host "$(scan.name) was successfully launched" -ForegroundColor Green
+                Write-Host "$($scan.name) was successfully launched" -ForegroundColor Green
             } else {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
                 Step = 'TenableCheck'
@@ -259,6 +262,13 @@ Function Scan-Tenable
                 $resource = "https://cloud.tenable.com/scans/$($scan.id)"
                 $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
                 $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*")}
+            } else {
+                $Validation.Add([PSCustomObject]@{System = 'Tenable' 
+                Step = 'TenableCheck'
+                Substep = 'Scan Status'
+                Status = 'Failed'
+                FriendlyError = "$($scan.name) was interrupted by someone or other operation. Please try again"
+                PsError = $PSItem.Exception}) > $null 
             }
 
             if ($vulns.count -eq 0)
@@ -288,7 +298,6 @@ Function Scan-Tenable
 
             return $Validation
         }
-
-        return $Validation, $vulns
     }
+    return $Validation, $vulns
 }
