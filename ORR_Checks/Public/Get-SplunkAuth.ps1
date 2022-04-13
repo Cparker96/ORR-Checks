@@ -39,7 +39,7 @@ function Get-SplunkAuth
 
     do {
     Write-Host 'Authenticating to Splunk'
-    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop -Verbose)
+    $Content = (Invoke-WebRequest -uri $Loginurl -Method Post -Body $Headers -ContentType "application/json" -UseBasicParsing -ErrorAction Stop)
     $authcounter++
     Start-Sleep -Seconds 10
     } until (($content.StatusCode -eq 200) -or ($authcounter -eq 5))
