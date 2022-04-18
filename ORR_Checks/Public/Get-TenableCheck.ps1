@@ -27,11 +27,51 @@ Function Get-TenableCheck
     )
     [System.Collections.ArrayList]$Validation = @()
 
+    try 
+    {
+        # get US East Cloud Scanner info
+        $headers = $null
+        $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource = "https://cloud.tenable.com/scanners"
+        $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
+        $useastcloudscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'US East Cloud Scanners'}
+    }
+    catch {
+        $validation.Add([PSCustomObject]@{System = 'Tenable'
+        Step = 'TenableCheck'
+        SubStep = 'Get Scanner Info'
+        Status = 'Failed'
+        FriendlyError = "Failed to fetch scanner info"
+        PsError = $PSItem.Exception}) > $null
+
+        return $Validation
+    }
+
+    try 
+    {
+        # get weekly scans ID
+        $headers = $null
+        $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+        $resource = "https://cloud.tenable.com/scanners/$($useastcloudscanner.id)/agent-groups"
+        $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
+        $weeklyscansgroup = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).groups | where {$_.name -eq 'WeeklyScans'}
+    }
+    catch {
+        $validation.Add([PSCustomObject]@{System = 'Tenable'
+        Step = 'TenableCheck'
+        SubStep = 'Get WeeklyScans Info'
+        Status = 'Failed'
+        FriendlyError = "Failed to fetch agent group info"
+        PsError = $PSItem.Exception}) > $null
+
+        return $Validation
+    }
+
     try{
         # grab the agents in the agent group 'WeeklyScans' details
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners/null/agent-groups/101288?offset=0&limit=200&sort=name:asc&wf=core_version,distro,groups,ip,name,platform,status&w=$($vmobj.Name)"
+        $resource = "https://cloud.tenable.com/scanners/null/agent-groups/$($weeklyscansgroup.id)?offset=0&limit=200&sort=name:asc&wf=core_version,distro,groups,ip,name,platform,status&w=$($vmobj.Name)"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
         $agentinfo = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).agents
 

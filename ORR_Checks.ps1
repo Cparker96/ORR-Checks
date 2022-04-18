@@ -216,10 +216,10 @@ Check Security controls
 	$agentinfo = $validateTenable[1]
 
 	[System.Collections.ArrayList]$tennableVulnerabilities = @()
-	if($VMRF.RunTenableScan -eq 'Yes')
+	if ($VMRF.RunTenableScan -eq 'Yes')
 	{
-		$tennableVulnerabilities = Scan-Tenable -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
-	} else{
+		$tennableVulnerabilities = Scan-Tenable -Vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey -agentInfo $agentinfo -Erroraction Stop
+	} else {
 		$tennableVulnerabilities.add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
         SubStep = 'Tenable Scan'
@@ -249,8 +249,8 @@ Formulate Output
 	@{n='Disk Information'; e={$vmobj.StorageProfile.DataDisks | select name, disksizeGB}}, 
 	@{n='Date Created'; e={get-date -format 'MM/dd/yyyy'}},
 	Requestor,
-	Approver,
-	'Created By',
+	@{n='Approver'; e={(get-aduser $($env:UserName)).name}},
+	"Created By",
 	'Ticket Number') 
 
 
@@ -356,20 +356,21 @@ Formulate Output
 
 <#============================================
 Write Output to Text file 
-============================================#>	
+#============================================#>	
+$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
+	
+# have to change outputrendering variable because of encoding issues - it will change back to default
 $prevRendering = $PSStyle.OutputRendering
 $PSStyle.OutputRendering = 'PlainText'
 
 try {
-	$filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
-	$output | Out-File "c:\temp\$filename.txt"
+    $output | Out-File "C:\Temp\$($filename).txt"
 }
 catch {
-	$PSItem.Exception
-}
-$PSStyle.OutputRendering = $prevRendering
+    $PSItem.Exception
+} 
 
-	
+$PSStyle.OutputRendering = $prevRendering
 
 <#============================================
 Write Output to database
