@@ -117,7 +117,7 @@ Function Scan-Tenable
                 PsError = $PSItem.Exception}) > $null
 
                 Write-Host "$($scan.name) is not ready to scan yet. Checking the next one." -ForegroundColor Yellow
-                break
+                continue
 
             } else {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
@@ -279,6 +279,9 @@ Function Scan-Tenable
                 Status = 'Passed'
                 FriendlyError = ''
                 PsError = ''}) > $null 
+
+                break
+
             } else {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
                 Step = 'TenableCheck'
@@ -286,6 +289,9 @@ Function Scan-Tenable
                 Status = 'Failed'
                 FriendlyError = 'There were multiple vulnerabilities found on the scan'
                 PsError = $PSItem.Exception}) > $null 
+
+                break
+   
             }
         }
         catch {
@@ -295,6 +301,8 @@ Function Scan-Tenable
             Status = 'Failed'
             FriendlyError = 'Failed to get post scan status. Please try again'
             PsError = $PSItem.Exception}) > $null 
+
+            break
 
             return $Validation
         }
