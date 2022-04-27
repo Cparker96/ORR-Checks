@@ -1,11 +1,11 @@
 {
-    "Hostname" : "Tenablegreat",
+    "Hostname" : "TXEAPPAZU055",
     "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "308-Utility",
+    "Subscription" : "TSV",
+    "Resource Group" : "Applications-FedExShipBucyrus-Dev",
     "Operating System" : "",
     "Requestor" : "Cody Parker",
     "Created By" : "Cody Parker",
     "Ticket Number" : "SCTASK0019827", 
-    "RunTenableScan" : "No"
+    "RunTenableScan" : "Yes"
 }

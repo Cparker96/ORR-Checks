@@ -100,23 +100,16 @@ Function Scan-Tenable
         try 
         {
             # get the latest scan status
-            Write-Host "Getting the status for $($scan.name)"
+            Write-Host "Getting the status for $($scan.name)" -ForegroundColor Yellow
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
             $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $prescanstatus = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).status
 
-            if (($prescanstatus -eq 'pending') -or ($prescanstatus -eq 'running'))
+            if (($prescanstatus -eq 'pending') -or ($prescanstatus -eq 'running') -or ($prescanstatus -eq 'stopping'))
             {
-                $Validation.Add([PSCustomObject]@{System = 'Tenable' 
-                Step = 'TenableCheck'
-                Substep = 'Pre-Scan status'
-                Status = 'Skipped'
-                FriendlyError = "$($scan.name) is not ready to scan yet. Checking the next one"
-                PsError = $PSItem.Exception}) > $null
-
-                Write-Host "$($scan.name) is not ready to scan yet. Checking the next one." -ForegroundColor Yellow
+                Write-Host "$($scan.name) is not ready to scan yet. Checking the next one..." -ForegroundColor Yellow 
                 continue
 
             } else {
@@ -256,13 +249,16 @@ Function Scan-Tenable
 
             if ($postscanstatus -eq 'completed')
             {
+                Write-Host "$($scan.Name) has successfully completed" -ForegroundColor Green
                 # get all vulns from scan results
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-                $resource = "https://cloud.tenable.com/scans/$($scan.id)"
-                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-                $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*")}
+                $resource = "https://cloud.tenable.com/scans/2300"
+                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")       # filtering out severity level, any McAfee version vulns, and mentioned plugin IDs (these are non critical due to nature of On Prem scanner)
+                $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*") -and ($_.plugin_id -notin 51192, 57582)}
             } else {
+                Write-Host "$($scan.Name) was interruped by someone or another operation" -ForegroundColor Red
+
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
                 Step = 'TenableCheck'
                 Substep = 'Scan Status'
