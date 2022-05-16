@@ -21,7 +21,8 @@ Function Get-ERPMOUCheck
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
-    #[System.Collections.ArrayList]$Validation = @()
+    [System.Collections.ArrayList]$Validation = @()
+    
     Try{
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
         -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
@@ -30,29 +31,29 @@ Function Get-ERPMOUCheck
 
         if ($validateerpm -notlike "*LDAP://*")
         {
-            $validation = [PSCustomObject]@{System = 'Server'
+            $validation.add([PSCustomObject]@{System = 'Server'
             Step = 'ERPMCheck'
             SubStep = 'ActiveDirectory OU'
             Status = 'Failed'
             FriendlyError = 'The Server Does not have an OU associated in AD'
-            PsError = ''}         
+            PsError = $PSItem.Exception}) > $null         
         } else {
-            $validation = [PSCustomObject]@{System = 'Server'
+            $validation.add([PSCustomObject]@{System = 'Server'
             Step = 'ERPMCheck'
             SubStep = 'ActiveDirectory OU'
             Status = 'Passed'
             FriendlyError = ''
-            PsError = '' }
+            PsError = ''}) > $null
         }
 
     }
     Catch{
-        $validation = [PSCustomObject]@{System = 'Server'
+        $validation.add([PSCustomObject]@{System = 'Server'
         Step = 'ERPMCheck'
         SubStep = 'ActiveDirectory OU'
         Status = 'Failed'
         FriendlyError = 'Failed to run ERPM Checks on the server'
-        PsError = "$PSItem.Exception" }
+        PsError = $PSItem.Exception}) > $null
 
         return $validation
     }

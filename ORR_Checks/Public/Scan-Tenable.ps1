@@ -163,7 +163,7 @@ Function Scan-Tenable
                 Substep = 'Change Target IP'
                 Status = 'Failed'
                 FriendlyError = "Could not change target IP field to match server IP"
-                PsError = ''}) > $null 
+                PsError = $PSItem.Exception}) > $null 
             }
         }
         catch {
@@ -172,7 +172,7 @@ Function Scan-Tenable
             Substep = 'Change Target IP'
             Status = 'Failed'
             FriendlyError = "Failed to change target IP. Please try again"
-            PsError = ''}) > $null 
+            PsError = $PSItem.Exception}) > $null 
 
             return $Validation
         }
@@ -205,7 +205,7 @@ Function Scan-Tenable
                 Substep = 'Launch Scan'
                 Status = 'Failed'
                 FriendlyError = "Could not launch scan for $($VMobj.Name)"
-                PsError = ''}) > $null 
+                PsError = $PSItem.Exception}) > $null 
             }
         } catch {
             $Validation.Add([PSCustomObject]@{System = 'Tenable' 
@@ -213,7 +213,7 @@ Function Scan-Tenable
             Substep = 'Launch Scan'
             Status = 'Failed'
             FriendlyError = "Failed to launch Tenable scan"
-            PsError = ''}) > $null 
+            PsError = $PSItem.Exception}) > $null 
 
             return $Validation
         }
@@ -254,8 +254,8 @@ Function Scan-Tenable
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
                 $resource = "https://cloud.tenable.com/scans/2300"
-                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")       # filtering out severity level, any McAfee version vulns, and mentioned plugin IDs (these are non critical due to nature of On Prem scanner)
-                $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*") -and ($_.plugin_id -notin 51192, 57582)}
+                $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")       
+                $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*")}
             } else {
                 Write-Host "$($scan.Name) was interruped by someone or another operation" -ForegroundColor Red
 
@@ -267,6 +267,37 @@ Function Scan-Tenable
                 PsError = $PSItem.Exception}) > $null 
             }
 
+            # if ($vulns.plugin_id -in 51192,57582)
+            # {
+            #     foreach ($vuln in $vulns.plugin_id)
+            #     {
+            #     # get asset info
+            #     $headers = $null
+            #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+            #     $resource = "https://cloud.tenable.com/workbenches/assets?date_range=30&filter.0.filter=host.target&filter.0.quality=match&filter.0.value=txeappazu055&filter.search_type=and"
+            #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
+            #     $asset = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).assets
+
+            #     $headers = $null
+            #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+            #     $resource = "https://cloud.tenable.com/workbenches/assets/$($asset.id)/vulnerabilities/57582/outputs"
+            #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
+            #     $x = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
+                
+            #     # $headers = $null
+            #     # $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+            #     # $resource = "https://cloud.tenable.com/scans/$($azureonboardingscans[1].id)/history"
+            #     # $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
+            #     # $b = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
+
+            #     # $headers = $null
+            #     # $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+            #     # $resource = "https://cloud.tenable.com/scans/$($azureonboardingscans[1].id)/history/$($b[0].scan_uuid)"
+            #     # $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
+            #     # $c = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
+            #     }
+            # }
+
             if ($vulns.count -eq 0)
             {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
@@ -277,7 +308,6 @@ Function Scan-Tenable
                 PsError = ''}) > $null 
 
                 break
-
             } else {
                 $Validation.Add([PSCustomObject]@{System = 'Tenable' 
                 Step = 'TenableCheck'
@@ -287,7 +317,6 @@ Function Scan-Tenable
                 PsError = $PSItem.Exception}) > $null 
 
                 break
-   
             }
         }
         catch {

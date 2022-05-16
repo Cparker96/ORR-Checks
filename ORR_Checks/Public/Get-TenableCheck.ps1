@@ -85,7 +85,7 @@ Function Get-TenableCheck
             SubStep = 'Tenable Configuration'
             Status = 'Failed'
             FriendlyError = "Please check the agent for the server"
-            PsError = ""}) > $null
+            PsError = $PSItem.Exception}) > $null
         } else {
             #add a row to the vailidation for correct configuration
             $validation.Add([PSCustomObject]@{System = 'Tenable'
