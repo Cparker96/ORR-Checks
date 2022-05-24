@@ -36,7 +36,7 @@ Function Get-ERPMAdminsCheck
 	$headers.Add('Accept','application/json')
 	$headers.Add('Content-Type','application/json')
 
-	$sctaskmeta = "https://textrontest2.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.server_admin_group"
+	$sctaskmeta = "https://textronprod.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.server_admin_group"
 
     $getsctask = Invoke-RestMethod -Headers $headers -Method Get -Uri $sctaskmeta
 

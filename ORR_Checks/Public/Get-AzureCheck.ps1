@@ -159,7 +159,7 @@ Function Get-AzureCheck{
 	$headers.Add('Accept','application/json')
 	$headers.Add('Content-Type','application/json')
 
-	$sctaskmeta = "https://textrontest2.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.azure_datacenter, `
+	$sctaskmeta = "https://textronprod.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.azure_datacenter, `
 	variables.azure_subscription,variables.resource_group,variables.date_needed,variables.operating_system,variables.amount_of_memory,variables.number_of_cores, `
     variables.server_type,variables.instance,variables.service_level,variables.patch_day"
 

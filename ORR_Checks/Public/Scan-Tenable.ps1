@@ -274,13 +274,13 @@ Function Scan-Tenable
             #     # get asset info
             #     $headers = $null
             #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     $resource = "https://cloud.tenable.com/workbenches/assets?date_range=30&filter.0.filter=host.target&filter.0.quality=match&filter.0.value=txeappazu055&filter.search_type=and"
+            #     $resource = "https://cloud.tenable.com/workbenches/assets?date_range=30&filter.0.filter=host.target&filter.0.quality=match&filter.0.value=txainfazu902&filter.search_type=and"
             #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
             #     $asset = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).assets
 
             #     $headers = $null
             #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     $resource = "https://cloud.tenable.com/workbenches/assets/$($asset.id)/vulnerabilities/57582/outputs"
+            #     $resource = "https://cloud.tenable.com/workbenches/assets/1f803460-4afa-477e-9bba-658b3fda9cb8/vulnerabilities/57582/outputs"
             #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
             #     $x = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
                 
