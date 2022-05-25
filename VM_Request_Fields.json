@@ -1,11 +1,11 @@
 {
-    "Hostname" : "TXAINFAZU902",
-    "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "308-Utility",
+    "Hostname" : "TXTAPPGOV008",
+    "Environment" : "AzureUSGovernment_Old",
+    "Subscription" : "AGC_Enterprise",
+    "Resource Group" : "Enterprise-eDiscovery",
     "Operating System" : "",
-    "Requestor" : "Cody Parker",
-    "Created By" : "Cody Parker",
-    "Ticket Number" : "SCTASK0020554", 
+    "Requestor" : "pcabral@txt.textron.com",
+    "Created By" : "pcabral@txt.textron.com",
+    "Ticket Number" : "SCTASK0026035", 
     "RunTenableScan" : "No"
 }

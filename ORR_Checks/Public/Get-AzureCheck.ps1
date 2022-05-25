@@ -68,7 +68,7 @@ Function Get-AzureCheck{
             }
             elseif($Environment -eq 'AzureUSGovernment_Old'){
                 $tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'
-                connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
+                connect-AzAccount -Environment 'AzureUSGovernment' -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment'){
                 $tenant = 'b347614d-8a51-4dfe-8bf7-16d51e6f6db8'
