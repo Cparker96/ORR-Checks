@@ -38,7 +38,7 @@ Function Get-McAfeeCheck
             SubStep = 'Agent Configuration'
             Status = 'Failed'
             FriendlyError = "McAfee Agent is not configured for this server. Please install it"
-            PsError = ''}) > $null
+            PsError = $PSItem.Exception}) > $null
         }else{
             $validation.Add([PSCustomObject]@{System = 'Server'
             Step = 'McAfeeCheck'
@@ -78,7 +78,7 @@ Function Get-McAfeeCheck
             SubStep = 'Check in Time'
             Status = 'Failed'
             FriendlyError = "This server is reporting but the last reported in date was longer than 6 hrs. Please reconfigure or contact Security"
-            PsError = ''}) > $null
+            PsError = $PSItem.Exception}) > $null
         }else {
             $validation.Add([PSCustomObject]@{System = 'Server'
             Step = 'McAfeeCheck'
@@ -93,7 +93,7 @@ Function Get-McAfeeCheck
         SubStep = "Check in Time"
         Status = 'Failed'
         FriendlyError = 'Failed to Report in Please reconfigure or contact Security.'
-        PsError = ''}) > $null 
+        PsError = $PSItem.Exception}) > $null 
 
         return $Validation
     }

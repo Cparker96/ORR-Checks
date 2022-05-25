@@ -27,13 +27,13 @@ Function Get-VMCheck
     Param
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj,
-        [parameter(Position = 1, Mandatory=$true)] $SqlCredential
+        [parameter(Position = 1, Mandatory=$true)] $SqlCredential,
+        [parameter(Position = 2, Mandatory=$true)] $sqlInstance,
+        [parameter(Position = 3, Mandatory=$true)] $sqlDatabase
+
     )
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
-
-    $sqlInstance = 'txadbsazu001.database.windows.net'
-    $sourcedbname = 'TIS_CMDB'
 
     Try 
     {
@@ -135,7 +135,7 @@ Function Get-VMCheck
             SubStep = 'Server Name'
             Status = 'Failed'
             FriendlyError = 'Server Name is not in the SQL DB'
-            PsError = ''}) > $null 
+            PsError = $PSItem.Exception}) > $null 
         }
         elseif('InUse' -ne $connection.status) 
         {
@@ -144,7 +144,7 @@ Function Get-VMCheck
             SubStep = 'Server Name'
             Status = 'Failed'
             FriendlyError = 'Please update the Status of the Server in the SQL DB'
-            PsError = ''}) > $null 
+            PsError = $PSItem.Exception}) > $null 
         }
         else{
             $Validation.add([PSCustomObject]@{System = 'SQL'
@@ -166,46 +166,6 @@ Function Get-VMCheck
 
         return $Validation , $services, $updatelist, $null
     }
-
-    <#============================================
-    Validate all steps were taken and passed
-    Step              SubStep
-    ----              -------
-    Validation        Services - Microsoft Monitoring Agent
-    Validation        Services - McAfee Agent Service
-    Validation        Services - SplunkForwarder Service
-    Validation        Services - Tenable Nessus Agent
-    #============================================
-  
-    [System.Collections.ArrayList]$ValidationPassed = @()
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Microsoft Monitoring Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - McAfee Agent Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - SplunkForwarder Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Tenable Nessus Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Updates'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'SQL'; Step = 'Validation'; SubStep = 'Server Name'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-
-
-
-    if(!(Compare-Object $Validation $ValidationPassed))
-    {
-        $Validation.add([PSCustomObject]@{System = 'Server'
-                        Step = 'Check'
-                        SubStep = 'Passed'
-                        Status = 'Passed'
-                        FriendlyError = ''
-                        PsError = ''}) > $null
-    }
-    else
-    {
-        $Validation.add([PSCustomObject]@{System = 'Server'
-                        Step = 'Check'
-                        SubStep = 'Failed'
-                        Status = 'Failed'
-                        FriendlyError = ""
-                        PsError = ''}) > $null
-    }#>
-
 
     return ($Validation, $services, $updatelist, $connection)
 }
