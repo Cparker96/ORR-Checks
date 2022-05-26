@@ -30,9 +30,9 @@ Function Get-AzureCheck{
         [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
         [parameter(Position=4, Mandatory=$false)] [String] $Region,
         [parameter(Position=5, Mandatory=$false)] [String] $Network,
-        [parameter(Position=6, Mandatory=$false)] $GovAccount,
-        [parameter(Position=7, Mandatory=$false)] $VmRF,
-        [parameter(Position=8, Mandatory=$false)] $prodpass
+        [parameter(Position=6, Mandatory=$false)] $GovAccount
+        #[parameter(Position=7, Mandatory=$false)] $VmRF
+        # [parameter(Position=8, Mandatory=$false)] $prodpass
         )
 
     [System.Collections.ArrayList]$Validation = @()
@@ -147,215 +147,215 @@ Function Get-AzureCheck{
     Validate VM Build Specs
     #=============================#>
 
-    $user = "sn.datacenter.integration.user"
-	$pass = $prodpass
+    # $user = "sn.datacenter.integration.user"
+	# $pass = $prodpass
 
-	# Build auth header
-	$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $pass)))
+	# # Build auth header
+	# $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $pass)))
 
-	# Set proper headers
-	$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-	$headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
-	$headers.Add('Accept','application/json')
-	$headers.Add('Content-Type','application/json')
+	# # Set proper headers
+	# $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+	# $headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
+	# $headers.Add('Accept','application/json')
+	# $headers.Add('Content-Type','application/json')
 
-	$sctaskmeta = "https://textronprod.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.azure_datacenter, `
-	variables.azure_subscription,variables.resource_group,variables.date_needed,variables.operating_system,variables.amount_of_memory,variables.number_of_cores, `
-    variables.server_type,variables.instance,variables.service_level,variables.patch_day"
+	# $sctaskmeta = "https://textronprod.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.azure_datacenter, `
+	# variables.azure_subscription,variables.resource_group,variables.date_needed,variables.operating_system,variables.amount_of_memory,variables.number_of_cores, `
+    # variables.server_type,variables.instance,variables.service_level,variables.patch_day"
 
-	$getsctask = Invoke-RestMethod -Headers $headers -Method Get -Uri $sctaskmeta
+	# $getsctask = Invoke-RestMethod -Headers $headers -Method Get -Uri $sctaskmeta
 
-    # check that VM is in correct sub/RG
-    $substringid = $VM.id.split('/')
-    $subid = $substringid[2]
+    # # check that VM is in correct sub/RG
+    # $substringid = $VM.id.split('/')
+    # $subid = $substringid[2]
 
-    try 
-    {
-        if ($subid -eq $getsctask.result.'variables.azure_subscription')
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Sub'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = ''}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Sub'
-            Status = 'Failed'
-            FriendlyError = 'Subscriptions between server and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Server Sub'
-        Status = 'Failed'
-        FriendlyError = 'Could not verify subscription matched user input'
-        PsError = $PSItem.Exception}) > $null
+    # try 
+    # {
+    #     if ($subid -eq $getsctask.result.'variables.azure_subscription')
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Sub'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = ''}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Sub'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Subscriptions between server and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Server Sub'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not verify subscription matched user input'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
 
-    try
-    {
-        if ($VM.ResourceGroupName -eq $getsctask.result.'variables.resource_group')
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server RG'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = ''}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server RG'
-            Status = 'Failed'
-            FriendlyError = 'Resource Groups between server and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Server RG'
-        Status = 'Failed'
-        FriendlyError = 'Could not verify that RG matched user input'
-        PsError = $PSItem.Exception}) > $null
+    # try
+    # {
+    #     if ($VM.ResourceGroupName -eq $getsctask.result.'variables.resource_group')
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server RG'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = ''}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server RG'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Resource Groups between server and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Server RG'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not verify that RG matched user input'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
 
-    # check that datacenter matches location
-    $vmlocation = $VM.Location
-    $locationalias = Get-AzLocation | where {$_.Location -eq $vmlocation}
+    # # check that datacenter matches location
+    # $vmlocation = $VM.Location
+    # $locationalias = Get-AzLocation | where {$_.Location -eq $vmlocation}
 
-    try
-    {
-        if (($locationalias -eq $VM.location) -and ($locationalias -eq $getsctask.result.'variables.azure_datacenter'))
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Location'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = ''}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Location'
-            Status = 'Failed'
-            FriendlyError = 'Azure region and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Server Location'
-        Status = 'Failed'
-        FriendlyError = 'Could not retrieve server location and match'
-        PsError = $PSItem.Exception}) > $null
+    # try
+    # {
+    #     if (($locationalias -eq $VM.location) -and ($locationalias -eq $getsctask.result.'variables.azure_datacenter'))
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Location'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = ''}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Location'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Azure region and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Server Location'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not retrieve server location and match'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
 
-    # check number of cores/size
-    $vmskuname = Get-AzVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | where {$_.Name -eq $VM.HardwareProfile.VmSize}
+    # # check number of cores/size
+    # $vmskuname = Get-AzVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | where {$_.Name -eq $VM.HardwareProfile.VmSize}
 
-    # doing math on the total memory requested (shown in MB - needs to be GB for validation)
-    $memoryamountmath = $vmskuname.MemoryInMB / 1024
+    # # doing math on the total memory requested (shown in MB - needs to be GB for validation)
+    # $memoryamountmath = $vmskuname.MemoryInMB / 1024
 
-    try
-    {
-        if (($vmskuname.NumberOfCores -eq $getsctask.result.'variables.number_of_cores') -and ($memoryamountmath -eq $getsctask.result.'variables.amount_of_memory'))
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Size'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = ''}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Size'
-            Status = 'Failed'
-            FriendlyError = 'Memory Size and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Server Size'
-        Status = 'Failed'
-        FriendlyError = 'Could not determine whether server size and requestor input match. Please try again'
-        PsError = $PSItem.Exception}) > $null
+    # try
+    # {
+    #     if (($vmskuname.NumberOfCores -eq $getsctask.result.'variables.number_of_cores') -and ($memoryamountmath -eq $getsctask.result.'variables.amount_of_memory'))
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Size'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = ''}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Size'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Memory Size and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Server Size'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not determine whether server size and requestor input match. Please try again'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
 
-    # check server instance
-    try
-    {
-        $getvmtags = Get-AzTag -ResourceId $VM.Id
+    # # check server instance
+    # try
+    # {
+    #     $getvmtags = Get-AzTag -ResourceId $VM.Id
 
-        if ($getvmtags.Properties.TagsProperty['Instance'] -eq $getsctask.result.'variables.instance'.ToUpper())
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Instance'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = $PSItem.Exception}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Server Instance'
-            Status = 'Failed'
-            FriendlyError = 'Instance tag and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Server Instance'
-        Status = 'Failed'
-        FriendlyError = 'Could not determine whether instance and requestor input match. Please try again'
-        PsError = $PSItem.Exception}) > $null
+    #     if ($getvmtags.Properties.TagsProperty['Instance'] -eq $getsctask.result.'variables.instance'.ToUpper())
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Instance'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = $PSItem.Exception}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Server Instance'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Instance tag and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Server Instance'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not determine whether instance and requestor input match. Please try again'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
 
-    # check service level
-    try
-    {
-        if ($getvmtags.Properties.TagsProperty['Service Level'] -eq $getsctask.result.'variables.service_level')
-        {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Service Level'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = $PSItem.Exception}) > $null
-        } else {
-            $Validation.add([PSCustomObject]@{System = 'Azure'
-            Step = 'AzureCheck'
-            SubStep = 'Service Level'
-            Status = 'Failed'
-            FriendlyError = 'Service level tag and requestor input do not match'
-            PsError = $PSItem.Exception}) > $null
-        }
-    } catch {
-        $Validation.add([PSCustomObject]@{System = 'Azure'
-        Step = 'AzureCheck'
-        SubStep = 'Service Level'
-        Status = 'Failed'
-        FriendlyError = 'Could not determine whether service level and requestor input match. Please try again'
-        PsError = $PSItem.Exception}) > $null
+    # # check service level
+    # try
+    # {
+    #     if ($getvmtags.Properties.TagsProperty['Service Level'] -eq $getsctask.result.'variables.service_level')
+    #     {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Service Level'
+    #         Status = 'Passed'
+    #         FriendlyError = ''
+    #         PsError = $PSItem.Exception}) > $null
+    #     } else {
+    #         $Validation.add([PSCustomObject]@{System = 'Azure'
+    #         Step = 'AzureCheck'
+    #         SubStep = 'Service Level'
+    #         Status = 'Failed'
+    #         FriendlyError = 'Service level tag and requestor input do not match'
+    #         PsError = $PSItem.Exception}) > $null
+    #     }
+    # } catch {
+    #     $Validation.add([PSCustomObject]@{System = 'Azure'
+    #     Step = 'AzureCheck'
+    #     SubStep = 'Service Level'
+    #     Status = 'Failed'
+    #     FriendlyError = 'Could not determine whether service level and requestor input match. Please try again'
+    #     PsError = $PSItem.Exception}) > $null
 
-        return $Validation
-    }
+    #     return $Validation
+    # }
     
     <#============================================
     Validate Tags
