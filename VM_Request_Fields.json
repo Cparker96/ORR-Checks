@@ -1,8 +1,8 @@
 {
-    "Hostname" : "TXTAPPGOV008",
-    "Environment" : "AzureUSGovernment_Old",
-    "Subscription" : "AGC_Enterprise",
-    "Resource Group" : "Enterprise-eDiscovery",
+    "Hostname" : "TXAAWSAZU021",
+    "Environment" : "AzureCloud",
+    "Subscription" : "Enterprise",
+    "Resource Group" : "308-Utility",
     "Operating System" : "",
     "Requestor" : "pcabral@txt.textron.com",
     "Created By" : "pcabral@txt.textron.com",
