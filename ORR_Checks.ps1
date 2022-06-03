@@ -121,13 +121,21 @@ Check VM in Azure
 	write-host "Validating Azure Object matches standards"
 
 	# will log you into Azure and set context to where the VM is
-	#returns 2 objects, a Validation checks object and an Azure VM object (if )
-	$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
-	-Environment $VmRF.Environment `
-	-Subscription $VmRF.Subscription `
-	-ResourceGroup $VmRF.'Resource Group' 
-	-GovAccount $GovAccount `
-	#-VmRF $VmRF `
+	#returns 2 objects, a Validation checks object and an Azure VM object
+	if ($VmRF.Environment -eq 'AzureCloud')
+	{
+		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
+		-Environment $VmRF.Environment `
+		-Subscription $VmRF.Subscription `
+		-ResourceGroup $VmRF.'Resource Group' 
+	} elseif ($VmRF.Environment -eq 'AzureUSGovernment') {
+		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
+		-Environment $VmRF.Environment `
+		-Subscription $VmRF.Subscription `
+		-ResourceGroup $VmRF.'Resource Group' `
+		-GovAccount $GovAccount 
+	}
+
 	#-prodpass $prodpass
 
 	#seperate the VM object from the azCheck object
