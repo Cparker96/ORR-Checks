@@ -27,24 +27,15 @@ Function Get-AzureCheck{
         [parameter(Position = 0, Mandatory=$true)] [String] $VmName,
         [parameter(Position = 1, Mandatory=$true)] [ValidateSet('AzureUSGovernment', 'AzureUSGovernment_Old', 'AzureCloud')] [String] $Environment,
         [parameter(Position = 2, Mandatory=$true)] [String] $Subscription,
-        [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup ,
-        [parameter(Position=4, Mandatory=$false)] [String] $Region,
-        [parameter(Position=5, Mandatory=$false)] [String] $Network,
+        [parameter(Position=3, Mandatory=$true)] [String] $ResourceGroup,
+        [parameter(Position=4, Mandatory=$true)] $VmRF,
+        [parameter(Position=5, Mandatory=$true)] $prodpass,
         [parameter(Position=6, Mandatory=$false)] $GovAccount
-        #[parameter(Position=7, Mandatory=$false)] $VmRF
-        # [parameter(Position=8, Mandatory=$false)] $prodpass
-        )
+    )
 
     [System.Collections.ArrayList]$Validation = @()
     $VM = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
-    <#
-    $VmRF = Get-Content "C:\Users\bh47391\Documents\_CodeRepos\ORR_Checks\VM_Request_Fields.json" | convertfrom-json -AsHashtable
-    $VmName = $VmRF.Hostname
-    $environment = $VmRF.Environment
-    $subscription = $VmRF.Subscription
-    $ResourceGroup = $VmRF.'Resource Group'
-    #>
 
     <#============================================
     Login to Azure
@@ -155,12 +146,13 @@ Function Get-AzureCheck{
 	$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 	$headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
 	$headers.Add('Accept','application/json')
+    $headers.Add('Content-Type','application/json')
 
     # check server type
-    if ($vm.StorageProfile.ImageReference.Publisher -eq 'MicrosoftWindowsServer')
+    if ($VM.StorageProfile.ImageReference.Publisher -eq 'MicrosoftWindowsServer')
     {
         $CIclassname = "cmdb_ci_win_server"
-    } else {
+    } elseif ($VM.StorageProfile.OsDisk.OsType -eq "Linux") {
         $CIclassname = "cmdb_ci_linux_server"
     }
 

@@ -105,7 +105,7 @@ Try{
     $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
 	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
 	$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
-	#$prodpass = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'SNOW-API-Password' -AsPlainText 
+	$prodpass = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'SNOW-API-Password' -AsPlainText 
 }
 Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
@@ -127,13 +127,24 @@ Check VM in Azure
 		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 		-Environment $VmRF.Environment `
 		-Subscription $VmRF.Subscription `
-		-ResourceGroup $VmRF.'Resource Group' 
-	} elseif ($VmRF.Environment -eq 'AzureUSGovernment') {
+		-ResourceGroup $VmRF.'Resource Group' `
+		-VmRF $VmRF `
+		-prodpass $prodpass
+	} elseif ($VmRF.Environment -eq 'AzureUSGovernment_Old') {
 		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 		-Environment $VmRF.Environment `
 		-Subscription $VmRF.Subscription `
 		-ResourceGroup $VmRF.'Resource Group' `
-		-GovAccount $GovAccount 
+		-VmRF $VmRF `
+		-prodpass $prodpass
+	} else {
+		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
+		-Environment $VmRF.Environment `
+		-Subscription $VmRF.Subscription `
+		-ResourceGroup $VmRF.'Resource Group' `
+		-VmRF $VmRF `
+		-prodpass $prodpass `
+		-GovAccount $GovAccount
 	}
 
 	#-prodpass $prodpass
