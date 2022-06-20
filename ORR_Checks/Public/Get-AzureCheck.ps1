@@ -139,9 +139,8 @@ Function Get-AzureCheck{
     #=============================#>
 
     $user = "sn.datacenter.integration.user"
-	$pass = "sn.datacenter.integration.user"
 
-	$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $pass)))
+	$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $prodpass)))
 
 	$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
 	$headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
@@ -175,12 +174,12 @@ Function Get-AzureCheck{
     $splitbody = $body.split('"')
     $classname = $splitbody[5]
     
-    $createCIendpoint = "https://textrontest2.servicenowservices.com/api/now/identifyreconcile?sysparm_data_source=Textron_Cloud_Automation"
+    $createCIendpoint = "https://textronprod.servicenowservices.com/api/now/identifyreconcile?sysparm_data_source=Textron_Cloud_Automation"
     $createCI = Invoke-RestMethod -Uri $createCIendpoint -Method 'POST' -Headers $headers -Body $body
     start-sleep -Seconds 10
 
     # validate CI was created 
-    $newlycreatedCIendpoint = "https://textrontest2.servicenowservices.com/api/now/cmdb/instance/$($classname)/$($createCI.result.items.sysId)"
+    $newlycreatedCIendpoint = "https://textronprod.servicenowservices.com/api/now/cmdb/instance/$($classname)/$($createCI.result.items.sysId)"
     $getnewlycreatedCI = Invoke-RestMethod -Uri $newlycreatedCIendpoint -Method GET -Headers $headers
 
     #validate that classname matches server type, name matches VM name, and status matches installed
