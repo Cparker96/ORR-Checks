@@ -156,15 +156,23 @@ Function Get-AzureCheck{
 	$headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
 	$headers.Add('Accept','application/json')
 
+    # check server type
+    if ($vm.StorageProfile.ImageReference.Publisher -eq 'MicrosoftWindowsServer')
+    {
+        $CIclassname = "cmdb_ci_win_server"
+    } else {
+        $CIclassname = "cmdb_ci_linux_server"
+    }
+
     $body = "{
            `"items`": [
                {
-                    `"className`": `"cmdb_ci_linux_server`",
+                    `"className`": `"$($CIclassname)`",
                     `"lookup`": [],
                     `"values`": {
                         `"install_status`": `"1`",
                         `"operational_status`": `"1`",
-                        `"name`": `"TXTSERVER7`"
+                        `"name`": `"$($VmRF.Hostname)`"
                     }
                 }
             ],
