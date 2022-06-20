@@ -105,6 +105,7 @@ Try{
     $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
 	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
 	$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
+	#$prodpass = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'SNOW-API-Password' -AsPlainText 
 }
 Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
@@ -120,12 +121,22 @@ Check VM in Azure
 	write-host "Validating Azure Object matches standards"
 
 	# will log you into Azure and set context to where the VM is
-	#returns 2 objects, a Validation checks object and an Azure VM object (if )
-	$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
-	-Environment $VmRF.Environment `
-	-Subscription $VmRF.Subscription `
-	-ResourceGroup $VmRF.'Resource Group' `
-	-GovAccount $GovAccount
+	#returns 2 objects, a Validation checks object and an Azure VM object
+	if ($VmRF.Environment -eq 'AzureCloud')
+	{
+		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
+		-Environment $VmRF.Environment `
+		-Subscription $VmRF.Subscription `
+		-ResourceGroup $VmRF.'Resource Group' 
+	} elseif ($VmRF.Environment -eq 'AzureUSGovernment') {
+		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
+		-Environment $VmRF.Environment `
+		-Subscription $VmRF.Subscription `
+		-ResourceGroup $VmRF.'Resource Group' `
+		-GovAccount $GovAccount 
+	}
+
+	#-prodpass $prodpass
 
 	#seperate the VM object from the azCheck object
 	if($null -eq ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})){
@@ -148,7 +159,7 @@ Log into VM and do pre domain join checks
 
 	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
 	{
-		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential
+		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential -SqlInstance $sqlInstance -SqlDatabase $sqlDatabase
 		$VmRF.'Operating System' = 'Windows'
 	}elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') { #if a Linux server
 		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
@@ -175,7 +186,7 @@ Check Security controls
 
 	$validateErpmOU = Get-ERPMOUCheck -vmobj $VmObj
 
-	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj 
+	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj #-VmRF $VmRF
 
 	<#============================================
 	McAfee (Windows Only)
