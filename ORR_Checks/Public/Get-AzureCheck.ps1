@@ -127,31 +127,8 @@ Function Get-AzureCheck{
     }
 
     <#============================================
-    Validate VM
-    #============================================
-    $VM | gm
-
-    #don't need to check that Environment, Subscription and Resource Group match 
-    #because you wouldn't be able to get the $vm object and it would fail validation
-    
-    #check it was build in the correct location 
-    $VM.location -eq $Region
-
-    #check it was built on the right subnet
-    $Nic = ''
-    $Nic = (Get-AzNetworkInterface -ResourceId $vm.NetworkProfile.networkinterfaces.id).IpConfigurations.subnet.id
-    $bla = [regex]::Matches($nic, "Microsoft.Network\/virtualNetworks\/(?:.*)\/subnets\/(?:.*)") 
-    $network -eq 
-
-    "Region" : "USGovVirginia",
-    "Virtual Network" : "",
-    "Operating System" : "Windows Server 2016 Datacenter"
-    #>
-    <#============================================
     Validate Tags
     #============================================#>
-
-    #$Validation = @()
     
     $tags = @()
     $tags = $VM.Tags | convertto-json 
