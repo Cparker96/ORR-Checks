@@ -172,47 +172,6 @@ Function Get-VMCheck
 
         return $Validation , $services, $updatelist, $null
     }
-
-    <#============================================
-    Validate all steps were taken and passed
-    Step              SubStep
-    ----              -------
-    Validation        Services - Microsoft Monitoring Agent
-    Validation        Services - McAfee Agent Service
-    Validation        Services - SplunkForwarder Service
-    Validation        Services - Tenable Nessus Agent
-    #============================================
-  
-    [System.Collections.ArrayList]$ValidationPassed = @()
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Microsoft Monitoring Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - McAfee Agent Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - SplunkForwarder Service'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Services - Tenable Nessus Agent'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'Server'; Step = 'Validation'; SubStep = 'Updates'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-    [void]$ValidationPassed.add([PSCustomObject]@{System = 'SQL'; Step = 'Validation'; SubStep = 'Server Name'; Status = 'Passed'; FriendlyError = ''; PsError = ''})
-
-
-
-    if(!(Compare-Object $Validation $ValidationPassed))
-    {
-        $Validation.add([PSCustomObject]@{System = 'Server'
-                        Step = 'Check'
-                        SubStep = 'Passed'
-                        Status = 'Passed'
-                        FriendlyError = ''
-                        PsError = ''}) > $null
-    }
-    else
-    {
-        $Validation.add([PSCustomObject]@{System = 'Server'
-                        Step = 'Check'
-                        SubStep = 'Failed'
-                        Status = 'Failed'
-                        FriendlyError = ""
-                        PsError = ''}) > $null
-    }#>
-
-
     return ($Validation, $services, $updatelist, $connection)
 }
 
