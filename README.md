@@ -19,7 +19,7 @@ Usage:
   ```
    - The Private folder will house any files that include commands that need to be executed on the server via an RDP connection and return data back to the localhost.
    - The Public folder will include the powershell functions that utilize the data returned from the commands in the files of the Private folder and perform checks and    conditional logic for the ORR process.
-   - The ORR_Checks.ps1 file will serve as the "control" script and utilize all functions in the Public folder, format the data properly, output to a SQL database, and    create a text file in the C:\Temp directory of the localhost of the raw data.
+   - The ORR_Checks.ps1 file will serve as the "control" script and utilize all functions in the Public folder, format the data properly, output to a SQL database, and    create a text file in the localhost's C:\Temp directory of the raw data.
 3. Dot source and execute the ORR_Checks.ps1 file
 ```powershell
 .\ORR_Checks.ps1
