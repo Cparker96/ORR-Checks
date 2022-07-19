@@ -6,7 +6,7 @@ All resource and other utilities such as variable names, keys, and links have be
 
 <h2>Description</h2>
 
-The ORR process, short for Operational Readiness Review, is a process that is utilized when someone submits a ticket request for a new virtual machine build inside the Azure Portal. A vendor will go out and build the VM to the requestor's needs in terms of size, number of cores, RAM, location, etc. Once complete, a member of the Cloud Operations team will execute the ORR process which includes validating that certain services are running (McAfee, Splunk, Tenable, etc.), validates that it is domain joined within Active Directory, and validates that no existing vulnerabilities exist on the server.
+The ORR process, short for Operational Readiness Review, is a process that is utilized when someone submits a ticket request for a new virtual machine build inside the Azure Portal. A vendor will go out and build the VM to the requestor's needs in terms of size, number of cores, RAM, location, etc. Once complete, a member of the Cloud Operations team will execute the ORR process which includes validating that certain services are running (McAfee, Splunk, Tenable, etc.) through specific APIs, validates that it is domain joined within Active Directory, and validates that no existing vulnerabilities exist on the server.
 
 Once the server has cleared ORR, the server will be handed off to the requestor, allowing them to install any necessary applications and software. 
 
