@@ -2,7 +2,7 @@
 
 This readme will be fully dedicated to the ORR Checks repository that serves as a custom powershell module to verify that an Azure virtual machine is ready for handoff once it has been vetted for any vulnerabilities, domain joined, and other checks to the server. 
 
-All resource and other utilities such as variable names, keys, and links have been sanitized of company specific jargon and have been replaced by the word "some" followed by a general description of what the resource entails (Ex: $key = "some_key").
+All resource and other utilities such as variable names, keys, and links have been sanitized and have been replaced by the word "some" followed by a general description of what the resource entails (Ex: $key = "some_key").
 
 Description: 
 
