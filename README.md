@@ -13,7 +13,10 @@ Once the server has cleared ORR, the server will be handed off to the requestor,
 Usage:
 
 1. Open an IDE of your choice with the parent ORR_Checks folder, fill out the VM_Request_Fields.json file with server metadata and save it
-2. Load the custom powershell module into your session (import-module .\ORR_Checks\)
+2. Load the custom powershell module into your session
+```powershell
+import-module .\ORR_Checks\
+```
   - The Private folder will house any files that include commands that need to be executed on the server via an RDP connection and return data back to the localhost.
   - The Public folder will include the powershell functions that utilize the data returned from the commands in the files of the Private folder and perform checks and conditional logic for the ORR process.
   - The ORR_Checks.ps1 file will serve as the "control" script and utilize all functions in the Public folder, format the data properly, output to a SQL database, and create a text file in the C:\Temp directory of the localhost of the raw data.
