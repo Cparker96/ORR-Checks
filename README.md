@@ -14,7 +14,7 @@ Once the server has cleared ORR, the server will be handed off to the requestor,
 
 1. Open a code editor of your choice with the parent ORR_Checks folder
 2. Fill out the VM_Request_Fields.json file with server metadata and save it
-3. Make sure you don't have a copy of a recent version of the module and its contents
+3. Make sure you don't have a copy of a previous version of the module and its contents
 ```powershell
 get-module ORR_Checks | remove-module
 ```
