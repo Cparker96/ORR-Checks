@@ -102,9 +102,11 @@ Try{
 
 	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey-10m' -AsPlainText 
 	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey-10m' -AsPlainText 
+	$gccappid = Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'Decom-GCC-App-ID' -AsPlainText
+    $gccappsecret = Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'Decom-GCC-Client-Secret' -AsPlainText
     $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
 	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
-	$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
+	#$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
 	$prodpass = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'SNOW-API-Password' -AsPlainText 
 }
 Catch{
@@ -122,6 +124,7 @@ Check VM in Azure
 
 	# will log you into Azure and set context to where the VM is
 	#returns 2 objects, a Validation checks object and an Azure VM object
+	
 	if ($VmRF.Environment -eq 'AzureCloud')
 	{
 		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
@@ -138,6 +141,9 @@ Check VM in Azure
 		-VmRF $VmRF `
 		-prodpass $prodpass
 	} else {
+		$gccappsecretsecure = ConvertTo-SecureString $gccappsecret -AsPlainText -Force
+		$GovAccount = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $gccappid, $gccappsecretsecure
+
 		$AzCheck = get-AzureCheck -VmName $VmRf.Hostname `
 		-Environment $VmRF.Environment `
 		-Subscription $VmRF.Subscription `
