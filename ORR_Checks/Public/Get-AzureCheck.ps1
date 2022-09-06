@@ -55,14 +55,17 @@ Function Get-AzureCheck{
 
             if($Environment -eq 'AzureCloud'){
                 $tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'
+                Write-Host "Logging into Azure Public"
                 connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment_Old'){
                 $tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'
+                Write-Host "Logging into Old Gov"
                 connect-AzAccount -Environment 'AzureUSGovernment' -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment'){
                 $tenant = 'b347614d-8a51-4dfe-8bf7-16d51e6f6db8'
+                Write-Host "Logging into GCC"
                 connect-AzAccount -Credential $GovAccount -Environment $Environment -tenant $tenant -ServicePrincipal -ErrorAction Stop -WarningAction Ignore >$null
             }     
         }

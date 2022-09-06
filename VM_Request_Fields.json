@@ -1,11 +1,11 @@
 {
-    "Hostname" : "testingcmdblin",
-    "Environment" : "AzureCloud",
-    "Subscription" : "Enterprise",
-    "Resource Group" : "308-Utility",
-    "Operating System" : "",
-    "Requestor" : "pcabral@txt.textron.com",
-    "Created By" : "pcabral@txt.textron.com",
-    "Ticket Number" : "SCTASK0026035", 
+    "Hostname" : "TXAAPPGOV016",
+    "Environment" : "AzureUSGovernment",
+    "Subscription" : "GOV_TIS",
+    "Resource Group" : "TIS-Vnet-usgovvirginia",
+    "Operating System" : "Windows Server 2019 Datacenter",
+    "Requestor" : "Smason01@txt.textron.com",
+    "Created By" : "Dmarin01@txt.textron.com",
+    "Ticket Number" : "SCTASK0031227", 
     "RunTenableScan" : "No"
 }
