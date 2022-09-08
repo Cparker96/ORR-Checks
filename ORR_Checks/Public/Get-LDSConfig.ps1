@@ -24,23 +24,24 @@ function Get-LDSConfig
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
-
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     [System.Collections.ArrayList]$Validation = @()
 
     try 
     {
-        $checklds = Invoke-AzVMRunCommand -ResourceGroupName 'ENG-PLM-DEVTEST' -VMName TXKAPPAZU809 -CommandId 'RunShellScript' `
-        -ScriptPath ".\Private\Check_LDS_Config.sh" -ErrorAction Stop
+        $checklds = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
+        -ScriptPath "$ScriptPath\Check_LDS_Config.sh" -ErrorAction Stop
 
         $ldsfile = $checklds.Value.message
         # the output var splits the sudofile var by the hidden whitespace, this took me forever to find
         # the result in the output var is $output[0] = "a string in one line" - previously I would get a single letter for the result
         # this is the only way I found that gets the output that I am looking for
-        $ldscontent = $ldsfile.Split('
-        ')
+        # $ldscontent = $ldsfile.Split('
+        # ')
+        
     }
     catch 
     {
-
+        $PSItem.Exception
     }
 }

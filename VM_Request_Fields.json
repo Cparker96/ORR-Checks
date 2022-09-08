@@ -1,8 +1,8 @@
 {
-    "Hostname" : "testingcmdblin",
+    "Hostname" : "TXAAPPAZU314",
     "Environment" : "AzureCloud",
     "Subscription" : "Enterprise",
-    "Resource Group" : "308-Utility",
+    "Resource Group" : "TIS_CloudOps_Terraform",
     "Operating System" : "",
     "Requestor" : "pcabral@txt.textron.com",
     "Created By" : "pcabral@txt.textron.com",

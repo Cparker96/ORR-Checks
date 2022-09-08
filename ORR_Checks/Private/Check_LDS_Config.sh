@@ -1,1 +1,0 @@
-cat /etc/sssd/sssd.conf

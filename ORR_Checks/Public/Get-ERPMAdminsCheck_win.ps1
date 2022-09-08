@@ -42,7 +42,7 @@ Function Get-ERPMAdminsCheck
 
     Try {
         $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins.ps1" -ErrorAction Stop
+        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins_win.ps1" -ErrorAction Stop
 
         $checkadmins = $Admins.Value.message | ConvertFrom-Csv 
         
