@@ -115,6 +115,10 @@ Catch{
 
 Write-Host "Running ORR on Server $($VmRF.Hostname)"
 
+disconnect-azaccount > $null
+disconnect-azaccount > $null
+disconnect-azaccount > $null
+
 <#============================================
 Check VM in Azure
 ============================================#>
