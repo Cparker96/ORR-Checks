@@ -12,7 +12,7 @@
     .NOTES
         FunctionName    : Get-RealmJoin
         Created by      : Cody Parker
-        Date Coded      : 09/08/2021
+        Date Coded      : 09/08/2022
         Modified by     : 
         Date Modified   : 
 

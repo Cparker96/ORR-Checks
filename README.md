@@ -79,10 +79,11 @@ Any value other than "No" will result in the tenable scan running.
  - Azure Gov - "AzureUSGovernment_Old"
  - Azure Gov GCC High - "AzureUSGovernment"
 
-* Every file has a three character code appended to the end of it indicating which OS it belongs to for performing ORR
- - win = windows
- - lnx = linux
+* Every file has a three character code appended to the end of it indicating which OS or environment it belongs to for performing ORR
+ - win = windows (azure)
+ - lnx = linux (azure)
  - vmw = vmware
+ - if it does not have a character code appended at the end of the file name, then it is used by all servers regardless of OS and environment
 
 ## Need help?
 If there are any questions please reach out to CloudOps@Textron.com via email with the textfile output, Server Name, Ticket Number, and Timestamp of the run you are having trouble with. 

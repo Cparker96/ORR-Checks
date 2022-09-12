@@ -115,6 +115,7 @@ Catch{
 
 Write-Host "Running ORR on Server $($VmRF.Hostname)"
 
+# logging out for now, the Get-AzureCheck function will determine which cloud to login to
 disconnect-azaccount > $null
 disconnect-azaccount > $null
 disconnect-azaccount > $null
@@ -207,7 +208,7 @@ Check Security controls
 
 	$validateErpmOU = Get-ERPMOUCheck -vmobj $VmObj
 
-	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj #-VmRF $VmRF
+	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj 
 
 	<#============================================
 	McAfee (Windows Only)
