@@ -29,7 +29,7 @@ function Get-SplunkStatus_lnx
     try 
     {
         $checksplunkstatus = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
-        -ScriptPath "$ScriptPath\Check_Splunk_lnx.sh" -ErrorAction Stop
+        -ScriptPath "$ScriptPath\Validate_Splunk_lnx.sh" -ErrorAction Stop
 
         $splunkstatus = $checksplunkstatus.Value.message
 
@@ -66,4 +66,6 @@ function Get-SplunkStatus_lnx
 
         return $Validation
     }
+
+    return $Validation, $splunkstatus
 }

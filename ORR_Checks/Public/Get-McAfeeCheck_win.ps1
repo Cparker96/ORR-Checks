@@ -14,12 +14,14 @@
         Modified by     : 
         Date Modified   : 
 #>
-Function Get-McAfeeCheck
+Function Get-McAfeeCheck_win
 {
     Param
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+
+    $ScriptPath = $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     [System.Collections.ArrayList]$Validation = @()
 
     <#==================================================
@@ -28,7 +30,7 @@ Function Get-McAfeeCheck
     Try{
         # need to validate that not only the agent is installed, need Endpoint Security, Firewall, etc.
         $programs = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_McAfee_ProgramCount.ps1"
+        -ScriptPath "$ScriptPath\Validate_McAfee_ProgramCount_win.ps1"
 
         $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
@@ -60,7 +62,7 @@ Function Get-McAfeeCheck
 
     Try{
         $mcafee = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_McAfee.ps1"
+        -ScriptPath "$ScriptPath\Validate_McAfee.ps1"
 
         $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
 

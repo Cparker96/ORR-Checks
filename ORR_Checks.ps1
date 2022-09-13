@@ -177,49 +177,36 @@ Log into VM and do pre domain join checks
 #============================================#>
 	$VmCheck = @()
 
-	write-host "Validating VM is set up for Domain Checks"
+	write-host "Validating $($Vmobj.Name) is set up for Domain Checks"
 
-	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
+	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows')
 	{
-		$VmCheck = Get-VMCheck -VmObj $VmObj -SqlCredential $SqlCredential -SqlInstance $sqlInstance -SqlDatabase $sqlDatabase
+		$VmCheck = Get-VMCheck_win -VmObj $VmObj -SqlCredential $SqlCredential -SqlInstance $sqlInstance -SqlDatabase $sqlDatabase
 		$VmRF.'Operating System' = 'Windows'
-	}elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') { #if a Linux server
-		# $VmCheck = Get-VMCheck_Linux -VmObj $VmObj
+
+		# validate ERPM (windows only)
+		write-host "Validating ERPM for $($Vmobj.Name)"
+		$validateErpmOU = Get-ERPMOUCheck_win -vmobj $VmObj
+		$validateErpmAdmins = Get-ERPMAdminsCheck_win -vmobj $VmObj 
+
+		# validate McAfee (windows only)
+		write-host "Validating McAfee for $($Vmobj.Name)"
+		$validateMcafee = Get-McAfeeCheck_winhj -vmobj $VmObj 
+
+	} elseif ($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
 		$VmRF.'Operating System' = 'Linux'
-	}else{
+
+		# validate services are running on linux machines, not in the 3rd party tool just yet
+		$validatesplunkstatus = Get-SplunkStatus_lnx.ps1 -VmObj $VMobj
+		$validatetenablestatus = Get-TenableStatus_lnx.ps1 -VmObj $VMobj
+
+		# validate updates (VM will be rebooted here before realm join)
+		$validateupdates = Get-Updates_lnx.ps1 -VmObj $VMobj
+		$validaterealmjoin = Get-RealmJoin_lnx.ps1 -VmObj $VMobj
+		$validateMMA = Get-MMACheck_lnx.ps1 -Vmobj $VMobj
+	} else {
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
-
-<#============================================
-Check Security controls
-	Windows
-		ERPM
-		Mcafee
-		Splunk
-		Tenable
-	Linux
-		Splunk
-		Tenable
-#============================================#>
-	<#============================================
-	ERPM (Windows Only)
-	#============================================#>
-	write-host "Validating ERPM"
-
-	$validateErpmOU = Get-ERPMOUCheck -vmobj $VmObj
-
-	$validateErpmAdmins = Get-ERPMAdminsCheck -vmobj $VmObj 
-
-	<#============================================
-	McAfee (Windows Only)
-	#============================================#>
-	write-host "Validating McAfee"
-
-	$validateMcafee = Get-McAfeeCheck -vmobj $VmObj 
-
-	<#============================================
-	Splunk
-	#============================================#>
 
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
@@ -237,9 +224,9 @@ Check Security controls
 	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
 	Start-Sleep -Seconds 30
 
-	<#============================================
+	<#============
 	Tenable
-	#============================================#>
+	#=============#>
 	$validateTenable = @()
 
 	write-host "Validating Tenable"
@@ -263,9 +250,9 @@ Check Security controls
 		$tennableVulnerabilities.add($null) > $null
 	}
 
-<#============================================
+<#=======================
 Formulate Output
-#============================================#>
+#========================#>
 	
 	$HostInformation = @()
 	$HostInformation = ($VmRF | select Hostname,
@@ -296,10 +283,21 @@ Formulate Output
 	#Validation Steps and Status
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
-	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)  
-	$Validation += $validateErpmOU[0]
-	$Validation += $validateErpmAdmins[0]  
-	$Validation += $validateMcafee[0]  
+	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)
+
+	if ($VMobj.StorageProfile.OsDisk.OsType -eq 'Windows')
+	{
+		$Validation += $validateErpmOU[0]
+		$Validation += $validateErpmAdmins[0]  
+		$Validation += $validateMcafee[0]
+	} else {
+		$Validation += $validatesplunkstatus[0]
+		$Validation += $validatetenablestatus[0]
+		$Validation += $validateupdates[0]
+		$Validation += $validaterealmjoin[0]
+		$Validation += $validateMMA[0]
+	}
+
 	$Validation += $SplunkAuth[0]
 	$Validation += $SplunkSearch[0]  
 	$Validation += $SplunkCheck[0] 
@@ -315,30 +313,52 @@ Formulate Output
 	}
 
 	[System.Collections.ArrayList]$rawData  = @()
-	#Azure Check
+	# Azure Check
 	$rawData += "`r`n______Azure Check_____"
 	$rawData +=  ($AzCheck | where {$_.gettype().name -ne 'ArrayList'}) | fl
-	#VM Services
-	$rawData += "`r`n______VM Check - Services_____"
-	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | ft)  
-	#VM Updates
-	$rawData += "`r`n_____VM Check - Updates______"
-	$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
-	#VM ServerName
-	$rawData += "`r`n_____VM Check - Server Name______"
-	$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
-	#ERPM OU
-	$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
-	$rawData += $validateErpmOU[1] 
-	#ERPM Admins
-	$rawData += "`r`n_____ERPM Check - ERPM Admins______"
-	$rawData += $validateErpmAdmins[1]
-	#mcafee configuration
-	$rawData += "`r`n_____McAfee Check - Agent Configuration______" 
-	$rawData += $validateMcafee[1] 
-	#mcafee check in
-	$rawData += "`r`n_____McAfee Check - Check in Time______"
-	$rawData += $validateMcafee[2] 
+
+	if ($VMobj.StorageProfile.OsDisk.OsType -eq 'Windows')
+	{
+		$rawData += "`r`n______VM Check - Services_____"
+		$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | ft)  
+		# windows Updates
+		$rawData += "`r`n_____VM Check - Updates______"
+		$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
+		# ServerName
+		$rawData += "`r`n_____VM Check - Server Name______"
+		$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
+		# ERPM OU
+		$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
+		$rawData += $validateErpmOU[1] 
+		# ERPM Admins
+		$rawData += "`r`n_____ERPM Check - ERPM Admins______"
+		$rawData += $validateErpmAdmins[1]
+		# mcafee config
+		$rawData += "`r`n_____McAfee Check - Agent Configuration______" 
+		$rawData += $validateMcafee[1] 
+		# mcafee check in
+		$rawData += "`r`n_____McAfee Check - Check in Time______"
+		$rawData += $validateMcafee[2] 
+	} elseif ($VMobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
+		# splunk check on server
+		$rawData += "`r`n_____VM Check - Splunk______"
+		$rawData += $validatesplunkstatus[1]
+		# tenable check on server
+		$rawData += "`r`n_____VM Check - Tenable______"
+		$rawData += $validatetenablestatus[1]
+		# linux kernel updates
+		$rawData += "`r`n_____Linux Updates______"
+		$rawData += $validateupdates[1..2]
+		# realm join
+		$rawData += "`r`n_____Realm Join______"
+		$rawData += $validaterealmjoin[1]
+		# MMA in Azure
+		$rawData += "`r`n_____MMA Configuration______"
+		$rawData += $validateMMA[1]
+	} else {
+		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
+	}
+
 	#splunk
 	$rawData += "`r`n_____Splunk Check______" 
 	$rawData += ($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | fl
@@ -348,7 +368,6 @@ Formulate Output
 	#tenable vulnerabilities
 	$rawData += "`r`n_____Tenable Check - Vulnerabilities______"
 	$rawData += $tennableVulnerabilities[1] | ft 
-
 
 	#format output for textfile
 	[System.Collections.ArrayList]$output = @()
@@ -367,7 +386,7 @@ Formulate Output
 	$output += $rawData
 
 	$date = get-date 
-	#format output for SQL
+	# format output for SQL
 	$sqloutput = @{}
 	$sqloutput = [PSCustomObject]@{HostInformation = "$($HostInformation | convertto-json)";
 		EnvironmentSpecificInformation = "$($EnvironmentSpecificInformation | convertto-json)";
@@ -387,9 +406,10 @@ Formulate Output
 		TicketNumber = $($HostInformation."Ticket Number");
 		Hostname = $($HostInformation.Hostname)}
 
-<#============================================
+<#==============================
 Write Output to Text file 
-#============================================#>	
+#===============================#>	
+
 $filename = "$($vmRF.Hostname)_$($date.ToString('yyyy-MM-dd.hh.mm'))" 
 	
 # have to change outputrendering variable because of encoding issues - it will change back to default
@@ -405,13 +425,11 @@ catch {
 
 $PSStyle.OutputRendering = $prevRendering
 
-<#============================================
+<#===============================
 Write Output to database
-#============================================#>
+#================================#>
 
 $DataTable = $sqloutput | ConvertTo-DbaDataTable 
-
-
 
 $DataTable | Write-DbaDbTableData -SqlInstance $sqlinstance `
 -Database $sqlDatabase  `

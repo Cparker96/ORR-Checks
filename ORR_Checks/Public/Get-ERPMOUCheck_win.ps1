@@ -15,17 +15,18 @@
         Date Modified   : 
 
 #>
-Function Get-ERPMOUCheck
+Function Get-ERPMOUCheck_win
 {
     Param
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     [System.Collections.ArrayList]$Validation = @()
     
     Try{
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU_win.ps1"
+        -ScriptPath "$ScriptPath\Validate_ERPM_OU_win.ps1"
     
         $validateerpm = $erpm.Value.message
 

@@ -31,7 +31,7 @@ function Get-RealmJoin_lnx
     try
     {
         $checkrealmjoin = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
-        -ScriptPath "$ScriptPath\Check_RealmJoin_lnx.sh" -ErrorAction Stop
+        -ScriptPath "$ScriptPath\Validate_RealmJoin_lnx.sh" -ErrorAction Stop
 
         $realmjoin = $checkrealmjoin.Value.message
 
@@ -69,4 +69,6 @@ function Get-RealmJoin_lnx
 
         return $Validation
     }
+
+    return $Validation, $realmjoin
 }

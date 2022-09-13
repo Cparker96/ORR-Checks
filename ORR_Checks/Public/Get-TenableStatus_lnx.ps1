@@ -29,7 +29,7 @@ function Get-TenableStatus_lnx
     try 
     {
         $checktenablestatus = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
-        -ScriptPath "$ScriptPath\Check_Tenable_lnx.sh" -ErrorAction Stop
+        -ScriptPath "$ScriptPath\Validate_Tenable_lnx.sh" -ErrorAction Stop
 
         $tenablestatus = $checktenablestatus.Value.message
 
@@ -66,4 +66,6 @@ function Get-TenableStatus_lnx
 
         return $Validation
     }
+
+    return $Validation, $tenablestatus
 }

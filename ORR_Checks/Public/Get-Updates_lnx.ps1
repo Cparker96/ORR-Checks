@@ -13,12 +13,6 @@
         Date Coded      : 09/09/2022
         Modified by     : 
         Date Modified   : 
-
-        # STEPS FOR MONDAY
-        # 1. CREATE DO UNTIL LOOP FOR UPDATES - PUT THE INVOKE-AZVMRUN COMMAND IN THE DO AND UNTIL THE VAR SAYS "NOTHING TO DO" AND/OR "COMPLETE!"
-            - MUST REBOOT THE MACHINE AFTER UPDATES ARE APPLIED
-        # 2. VALIDATE THAT MMA IS CONFIGURED IN LAW - WRITE A LAW QUERY USING POWERSHELL TO VALIDATE THIS
-
 #>
 
 function Get-Updates_lnx
@@ -36,7 +30,7 @@ function Get-Updates_lnx
         try
         {
             $checkupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunShellScript' `
-            -ScriptPath "$ScriptPath\Check_Updates_lnx.sh" -ErrorAction Stop
+            -ScriptPath "$ScriptPath\Validate_Updates_lnx.sh" -ErrorAction Stop
 
             $updatelist = $checkupdates.Value.message
         }
@@ -120,5 +114,5 @@ function Get-Updates_lnx
     #     Start-Sleep -Seconds 3
     # } until ($ping.status[0..3] -eq $targetstatus)
 #> 
-    return $Validation
+    return $Validation, $updatelist, $restartvm
 }

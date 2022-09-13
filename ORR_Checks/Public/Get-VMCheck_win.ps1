@@ -22,7 +22,7 @@
         Date Modified   : 
 
 #>
-Function Get-VMCheck
+Function Get-VMCheck_win
 {
     Param
     (
@@ -39,7 +39,7 @@ Function Get-VMCheck
     {
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
         $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-            -ScriptPath "$ScriptPath\Service_Checks.ps1" -ErrorAction Stop
+            -ScriptPath "$ScriptPath\Validate_Services_win.ps1" -ErrorAction Stop
         
         #convert out of CSV so that we will get a object
         $services = $output.Value.message | convertfrom-csv
