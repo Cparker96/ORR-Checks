@@ -290,12 +290,16 @@ Formulate Output
 		$Validation += $validateErpmOU[0]
 		$Validation += $validateErpmAdmins[0]  
 		$Validation += $validateMcafee[0]
-	} else {
+	} elseif ($VMobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
 		$Validation += $validatesplunkstatus[0]
 		$Validation += $validatetenablestatus[0]
 		$Validation += $validateupdates[0]
+		# giving time for Heartbeat alerts to check in
+		Start-Sleep -Seconds 60 
 		$Validation += $validaterealmjoin[0]
 		$Validation += $validateMMA[0]
+	} else {
+		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
 
 	$Validation += $SplunkAuth[0]
