@@ -31,32 +31,32 @@ Function Get-MMACheck_lnx
     $workspace = 'e0225178-cc8b-4aa2-9422-0df2fa85cff9'  
     $searchquery = "Heartbeat
     | where OSType == 'Linux'
-    | where Category != 'Azure Monitor Agent'
-    | where Computer == '$($VmObj.Name)'
     | summarize arg_max(TimeGenerated, *) by SourceComputerId
-    | sort by Computer
-    | render table"
+    | sort by Version asc
+    | render table
+    | project Computer, Version
+    | where Computer == '$($VmObj.Name)'"
 
     # go search Textron LAW for MMA check in
     try 
     {
         $LAWquery = Invoke-AzOperationalInsightsQuery -WorkspaceId $workspace -Query $searchquery 
 
-        if ($null -eq $LAWquery)
+        if (($null -ne $LAWquery.Results) -and ($LAWquery.Results.Computer -eq $VmObj.Name))
         {
-            $Validation.add([PSCustomObject]@{System = 'Server'
-            Step = 'MMA'
-            SubStep = "MMA"
-            Status = 'Failed'
-            FriendlyError = "There doesn't seem to be a heartbeat check in for $($Vmobj.Name). Please troubleshoot"
-            PsError = $PSItem.Exception}) > $null 
-        } else {
             $Validation.add([PSCustomObject]@{System = 'Server'
             Step = 'MMA'
             SubStep = "MMA"
             Status = 'Passed'
             FriendlyError = ""
             PsError = ''}) > $null 
+        } else {
+            $Validation.add([PSCustomObject]@{System = 'Server'
+            Step = 'MMA'
+            SubStep = "MMA"
+            Status = 'Failed'
+            FriendlyError = "There doesn't seem to be a heartbeat check in for $($Vmobj.Name). Please troubleshoot"
+            PsError = $PSItem.Exception}) > $null 
         }
     } catch {
         $Validation.add([PSCustomObject]@{System = 'Server'
@@ -67,5 +67,5 @@ Function Get-MMACheck_lnx
         PsError = $PSItem.Exception}) > $null 
     }
 
-    return $Validation, $LAWquery
+    return $Validation, $LAWquery.Results
 }
