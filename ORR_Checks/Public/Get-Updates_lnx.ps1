@@ -45,9 +45,9 @@ function Get-Updates_lnx
 
             return $Validation
         }
-    } until (($updatelist -like "*Complete!*") -or ($updatelist -like "*Nothing to do*"))
+    } until (($updatelist -like "*Complete!*") -and ($updatelist -like "*Nothing to do*"))
 
-    if (($updatelist -like "*Complete!*") -or ($updatelist -like "*Nothing to do*")) 
+    if (($updatelist -like "*Complete!*") -and ($updatelist -like "*Nothing to do*")) 
     {
         $Validation.add([PSCustomObject]@{System = 'Server'
         Step = 'Updates'

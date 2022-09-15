@@ -1,1 +1,1 @@
-Get-WmiObject -Class Win32_Product | select Name | where {$_.Name -like "*McAfee Agent*"} | ConvertTo-Csv
+get-wmiobject -class Win32_Product | where {$_.Name -like "*Trellix Agent*"} | ConvertTo-Csv

@@ -1,8 +1,8 @@
 {
-    "Hostname" : "testlinux",
+    "Hostname" : "TXAINFAZU918",
     "Environment" : "AzureCloud",
     "Subscription" : "Enterprise",
-    "Resource Group" : "TIS_CloudOps_Terraform",
+    "Resource Group" : "308-Utility",
     "Operating System" : "",
     "Requestor" : "pcabral@txt.textron.com",
     "Created By" : "pcabral@txt.textron.com",

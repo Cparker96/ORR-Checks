@@ -34,7 +34,7 @@ Function Get-McAfeeCheck_win
 
         $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
-        if ($mcafeeprograms.Name -ne 'McAfee Agent') {
+        if ($mcafeeprograms.Name -ne "Trellix Agent") {
             $validation.Add([PSCustomObject]@{System = 'Server'
             Step = 'McAfeeCheck'
             SubStep = 'Agent Configuration'

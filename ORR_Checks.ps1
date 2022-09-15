@@ -193,17 +193,25 @@ Log into VM and do pre domain join checks
 		write-host "Validating McAfee for $($Vmobj.Name)"
 		$validateMcafee = Get-McAfeeCheck_winhj -vmobj $VmObj 
 
+		# validating hostname entry status in SQL
+		$validatehostname = Get-HostNameSQL -VmObj $VmObj -SqlCredential $SqlCredential -sqlInstance $sqlInstance -sqlDatabase $sqlDatabase
+
 	} elseif ($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
 		$VmRF.'Operating System' = 'Linux'
 
 		# validate services are running on linux machines, not in the 3rd party tool just yet
-		$validatesplunkstatus = Get-SplunkStatus_lnx.ps1 -VmObj $VMobj
-		$validatetenablestatus = Get-TenableStatus_lnx.ps1 -VmObj $VMobj
+		Write-Host "Validating services running on $($Vmobj.Name)"
+		$validatesplunkstatus = Get-SplunkStatus_lnx -VmObj $VMobj
+		$validatetenablestatus = Get-TenableStatus_lnx -VmObj $VMobj
+		$validateMMA = Get-MMACheck_lnx -Vmobj $VMobj
 
 		# validate updates (VM will be rebooted here before realm join)
-		$validateupdates = Get-Updates_lnx.ps1 -VmObj $VMobj
-		$validaterealmjoin = Get-RealmJoin_lnx.ps1 -VmObj $VMobj
-		$validateMMA = Get-MMACheck_lnx.ps1 -Vmobj $VMobj
+		Write-Host "Validating updates and realm join for $($Vmobj.Name). Server will be rebooted"
+		$validateupdates = Get-Updates_lnx -VmObj $VMobj
+		$validaterealmjoin = Get-RealmJoin_lnx -VmObj $VMobj
+
+		# validating hostname entry status in SQL
+		$validatehostname = Get-HostNameSQL -VmObj $VmObj -SqlCredential $SqlCredential -sqlInstance $sqlInstance -sqlDatabase $sqlDatabase
 	} else {
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
@@ -290,10 +298,12 @@ Formulate Output
 		$Validation += $validateErpmOU[0]
 		$Validation += $validateErpmAdmins[0]  
 		$Validation += $validateMcafee[0]
+		$Validation += $validatehostname[0]
 	} elseif ($VMobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
 		$Validation += $validatesplunkstatus[0]
 		$Validation += $validatetenablestatus[0]
 		$Validation += $validateupdates[0]
+		$Validation += $validatehostname[0]
 		# giving time for Heartbeat alerts to check in
 		Start-Sleep -Seconds 60 
 		$Validation += $validaterealmjoin[0]
@@ -330,7 +340,7 @@ Formulate Output
 		$rawData += ($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] 
 		# ServerName
 		$rawData += "`r`n_____VM Check - Server Name______"
-		$rawData += (($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | ft
+		$rawData += $validatehostname[1]
 		# ERPM OU
 		$rawData += "`r`n_____ERPM Check - ActiveDirectory OU______"
 		$rawData += $validateErpmOU[1] 
@@ -352,7 +362,10 @@ Formulate Output
 		$rawData += $validatetenablestatus[1]
 		# linux kernel updates
 		$rawData += "`r`n_____Linux Updates______"
-		$rawData += $validateupdates[1..2]
+		$rawData += $validateupdates[1]
+		# restart vm to apply updates
+		$rawData += "`r`n_____Restart VM______"
+		$rawData += $validateupdates[2]
 		# realm join
 		$rawData += "`r`n_____Realm Join______"
 		$rawData += $validaterealmjoin[1]
@@ -392,13 +405,17 @@ Formulate Output
 	$date = get-date 
 	# format output for SQL
 	$sqloutput = @{}
-	$sqloutput = [PSCustomObject]@{HostInformation = "$($HostInformation | convertto-json)";
+
+	# if the VM is linux, need to change a few fields before it gets outputted to sql table
+	if ($VMobj.StorageProfile.OsDisk.OsType -eq 'Windows')
+	{
+		$sqloutput = [PSCustomObject]@{HostInformation = "$($HostInformation | convertto-json)";
 		EnvironmentSpecificInformation = "$($EnvironmentSpecificInformation | convertto-json)";
 		Status = "$($Validation | convertto-json -WarningAction SilentlyContinue)"
 		Output_AzureCheck = "$(($AzCheck | where {$_.gettype().name -ne 'ArrayList'}) | ConvertTo-Json -WarningAction SilentlyContinue)";
 		Output_VmCheck_Services = "$((($VmCheck | where {$_.gettype().name -ne 'ArrayList'} )[0] | convertto-json -WarningAction SilentlyContinue))";
 		Output_VmCheck_Updates = "$(($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[1] | convertto-json -WarningAction SilentlyContinue)";
-		Output_VmCheck_ServerName = "$((($VmCheck | where {$_.gettype().name -ne 'ArrayList'})[2]) | convertto-json -WarningAction SilentlyContinue)";
+		Output_VmCheck_ServerName = "$($validatehostname[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_ERPMCheck_OU = "$($validateErpmOU[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_ERPMCheck_Admins = "$($validateErpmAdmins[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_McafeeCheck_Configuration = "$($validateMcafee[1] | convertto-json -WarningAction SilentlyContinue)";
@@ -408,7 +425,28 @@ Formulate Output
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
 		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
 		TicketNumber = $($HostInformation."Ticket Number");
-		Hostname = $($HostInformation.Hostname)}
+		Hostname = $($HostInformation.Hostname)}	
+	} elseif ($VMobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
+		$sqloutput = [PSCustomObject]@{HostInformation = "$($HostInformation | convertto-json)";
+		EnvironmentSpecificInformation = "$($EnvironmentSpecificInformation | convertto-json)";
+		Status = "$($Validation | convertto-json -WarningAction SilentlyContinue)"
+		Output_AzureCheck = "$(($AzCheck | where {$_.gettype().name -ne 'ArrayList'}) | ConvertTo-Json -WarningAction SilentlyContinue)";
+		Output_VmCheck_Services = "$(($validatesplunkstatus[1] + $validatetenablestatus[1] | convertto-json -WarningAction SilentlyContinue))";
+		Output_VmCheck_Updates = "$(($validateupdates[1] | where {$_.gettype().name -ne 'ArrayList'})[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_VmCheck_ServerName = "$($validatehostname[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_ERPMCheck_OU = "$($validateErpmOU[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_ERPMCheck_Admins = "$($validateErpmAdmins[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_McafeeCheck_Configuration = "$($validateMcafee[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_McafeeCheck_Checkin = "$($validateMcafee[2] | convertto-json -WarningAction SilentlyContinue)";
+		Output_SplunkCheck = "$(($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | convertto-json -WarningAction SilentlyContinue)";
+		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
+		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
+		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
+		TicketNumber = $($HostInformation."Ticket Number");
+		Hostname = $($HostInformation.Hostname);
+		Output_RealmJoinCheck = $($validaterealmjoin[1] | convertto-json -WarningAction SilentlyContinue);
+		Output_MMACheck = $($validateMMA[1] | convertto-json -WarningAction SilentlyContinue)}
+	}
 
 <#==============================
 Write Output to Text file 

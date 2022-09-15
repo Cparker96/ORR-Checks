@@ -9,6 +9,6 @@ PowerShellVersion = '7.1.2'
 DotNetFrameworkVersion = '4.0'
 CLRVersion = '4.0'
 AliasesToExport = @()
-FunctionsToExport = @('Get-AzureCheck', 'Get-VMCheck_win','Get-ERPMAdminsCheck_win','Get-ERPMOUCheck_win','Get-McAfeeCheck_win','Get-TenableCheck','Scan-Tenable', 'Get-SplunkSearch', 'Get-SplunkAuth', 'Get-SplunkResult', 'Get-MMACheck_lnx', 'Get-RealmJoin_lnx', 'Get-SplunkStatus_lnx', 'Get-TenableStatus_lnx', 'Get-Updates_lnx')
+FunctionsToExport = @('Get-AzureCheck', 'Get-VMCheck_win','Get-ERPMAdminsCheck_win','Get-ERPMOUCheck_win','Get-McAfeeCheck_win','Get-TenableCheck','Scan-Tenable', 'Get-SplunkSearch', 'Get-SplunkAuth', 'Get-SplunkResult', 'Get-MMACheck_lnx', 'Get-RealmJoin_lnx', 'Get-SplunkStatus_lnx', 'Get-TenableStatus_lnx', 'Get-Updates_lnx', 'Get-HostNameSQL')
 }
 

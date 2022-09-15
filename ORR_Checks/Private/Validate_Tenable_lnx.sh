@@ -1,1 +1,1 @@
-systemctl | grep "nessus"
+systemctl | grep nessus

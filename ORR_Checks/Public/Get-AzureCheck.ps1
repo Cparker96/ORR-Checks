@@ -55,7 +55,7 @@ Function Get-AzureCheck{
 
             if($Environment -eq 'AzureCloud'){
                 $tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'
-                Write-Host "Logging into Azure Public"
+                Write-Host "Logging into Azure Commercial"
                 connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment_Old'){
