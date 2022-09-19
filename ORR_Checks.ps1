@@ -113,7 +113,7 @@ Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
 }
 
-Write-Host "Running ORR on Server $($VmRF.Hostname)"
+Write-Host "Running ORR on Server $($VmRF.Hostname)" -ForegroundColor Yellow
 
 # logging out for now, the Get-AzureCheck function will determine which cloud to login to
 disconnect-azaccount > $null
@@ -125,7 +125,7 @@ Check VM in Azure
 ============================================#>
 	$AzCheck = @()
 
-	write-host "Validating Azure Object matches standards"
+	write-host "Validating Azure Object matches standards" -ForegroundColor Yellow
 
 	# will log you into Azure and set context to where the VM is
 	#returns 2 objects, a Validation checks object and an Azure VM object
@@ -177,7 +177,7 @@ Log into VM and do pre domain join checks
 #============================================#>
 	$VmCheck = @()
 
-	write-host "Validating $($Vmobj.Name) is set up for Domain Checks"
+	write-host "Validating $($Vmobj.Name) is set up for Domain Checks" -ForegroundColor Yellow
 
 	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows')
 	{
@@ -216,6 +216,7 @@ Log into VM and do pre domain join checks
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
 
+	Write-Host "Validating Splunk for $($Vmobj.Name)" -ForegroundColor Yellow
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
 
@@ -237,7 +238,7 @@ Log into VM and do pre domain join checks
 	#=============#>
 	$validateTenable = @()
 
-	write-host "Validating Tenable"
+	write-host "Validating Tenable for $($Vmobj.Name)" -ForegroundColor Yellow
 	$validateTenable = Get-TenableCheck -vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey
 
 	$agentinfo = @()
@@ -466,6 +467,8 @@ catch {
 } 
 
 $PSStyle.OutputRendering = $prevRendering
+
+Write-Host "Wrote ORR output of $($Vmobj.Name) to a .txt file - Check the C:\Temp directory" -ForegroundColor Yellow
 
 <#===============================
 Write Output to database
