@@ -26,6 +26,7 @@ function Get-SplunkResult
     )
     [System.Collections.ArrayList]$Validation = @()
 
+    Write-Host "Checking recent logs for validation"
     $JobResultUrl = $Url.AbsoluteUri + ("services/search/jobs/{0}/results?output_mode=json&count=0" -f $Sid)
 
     $Auth = @{'Authorization'=$Key}

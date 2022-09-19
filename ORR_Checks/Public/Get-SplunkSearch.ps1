@@ -27,6 +27,7 @@ function Get-SplunkSearch
     )
     [System.Collections.ArrayList]$Validation = @()
 
+    Write-Host "Querying Splunk for server logs"
     if ($VmObj.Name -like "*IDC*") #if a domain controller - will always be windows
     {
         $Searchstring = "search index=win_event_dc* host=$($VmObj.Name) earliest=-60m | head 1"
