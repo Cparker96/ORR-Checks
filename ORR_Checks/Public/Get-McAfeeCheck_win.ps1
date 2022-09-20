@@ -62,7 +62,7 @@ Function Get-McAfeeCheck_win
 
     Try{
         $mcafee = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$ScriptPath\Validate_McAfee.ps1"
+        -ScriptPath "$ScriptPath\Validate_McAfee_win.ps1"
 
         $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
 

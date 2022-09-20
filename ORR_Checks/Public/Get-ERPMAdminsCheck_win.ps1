@@ -8,7 +8,7 @@
     .EXAMPLE
 
     .NOTES
-        FunctionName    : Get-ERPMAdminsCheck
+        FunctionName    : Get-ERPMAdminsCheck_win
         Created by      : Cody Parker
         Date Coded      : 07/9/2021
         Modified by     : 

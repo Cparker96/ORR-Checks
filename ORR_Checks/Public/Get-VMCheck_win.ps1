@@ -15,7 +15,7 @@
             
 
     .NOTES
-        FunctionName    : Get-VMCheck
+        FunctionName    : Get-VMCheck_win
         Created by      : Cody Parker
         Date Coded      : 04/21/2021
         Modified by     : 
