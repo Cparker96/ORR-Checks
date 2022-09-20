@@ -70,21 +70,28 @@ Get variables
 #============================================#>
 Set-StrictMode -version 3 
 set-strictMode -Off
-[Uri]$Url = "https://splk.textron.com:8089"
+[Uri]$Url = "https://textron.splunkcloud.com:8089"
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
 $validateErpmOU = @()
 $validateErpmAdmins = @()
 $validateMcafee = @()
+$validatesplunkstatus = @()
+$validatetenablestatus = @()
+$validateMMA = @()
+$validateupdates = @()
+$validaterealmjoin = @()
+$validatehostname = @()
 $SplunkCheck = @()
 $validateTenable = @()
+$agentinfo = @()
 $tennableVulnerabilities = @()
 $SqlCredential = @()
 $sqlInstance = 'txadbsazu001.database.windows.net'
 $sqlDatabase = 'TIS_CMDB'
 
-#get Server Build variables from VM_Request_Fields.json
+# get Server Build variables from VM_Request_Fields.json
 Try
 {
 	$VmRF = Get-Content .\VM_Request_Fields.json | convertfrom-json -AsHashtable
@@ -95,7 +102,7 @@ catch{ write-error "Could not load VM_Request_Fields.json `r`n $($_.Exception)" 
 Get Credentials
 #============================================#>
 Try{
-	#connect to Public azure and make sure the context is Enterprise where the keyvault exists
+	# connect to Public azure and make sure the context is Enterprise where the keyvault exists
 	disconnect-azaccount > $null
 	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' -WarningAction ignore > $null
 	Set-AzContext -Subscription 'Enterprise' > $null
@@ -158,16 +165,14 @@ Check VM in Azure
 		-GovAccount $GovAccount
 	}
 
-	#-prodpass $prodpass
-
-	#seperate the VM object from the azCheck object
+	# seperate the VM object from the azCheck object
 	if($null -eq ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})){
 		Write-Error "$($AzCheck.FriendlyError)" -ErrorAction Stop
 	}else{
 		$VmObj = ($AzCheck | where {$_.gettype().name -eq 'PSVirtualMachine'})
 	}
 
-	#if the contributor role isn't checked out then fail the script
+	# if the contributor role isn't checked out then fail the script
 	if(($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].status -eq 'failed'){
 		Write-Error ($AzCheck| where {$_.gettype().name -eq 'ArrayList'})[3].FriendlyError -ErrorAction Stop
 	}
@@ -233,15 +238,13 @@ Log into VM and do pre domain join checks
 	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
 	Start-Sleep -Seconds 30
 
-	<#============
-	Tenable
-	#=============#>
-	$validateTenable = @()
+<#============
+Tenable
+#=============#>
 
 	write-host "Validating Tenable for $($Vmobj.Name)" -ForegroundColor Yellow
 	$validateTenable = Get-TenableCheck -vmobj $VmObj -TenableAccessKey $TenableAccessKey -TenableSecretKey $TenableSecretKey
 
-	$agentinfo = @()
 	$agentinfo = $validateTenable[1]
 
 	[System.Collections.ArrayList]$tennableVulnerabilities = @()
@@ -283,13 +286,13 @@ Formulate Output
 	'Ticket Number') 
 
 
-	#environment Specific Information
+	# environment Specific Information
 	$EnvironmentSpecificInformation = @()
 	$EnvironmentSpecificInformation = ($VmRF | select Subscription, 
 	'Resource Group', 
 	@{n='Instance'; e={$VmObj.Tags.Instance}})
 
-	#Validation Steps and Status
+	# Validation Steps and Status
 	[System.Collections.ArrayList]$Validation  = @()
 	$Validation += ($AzCheck | where {$_.gettype().name -eq 'ArrayList'})  
 	$Validation += ($VmCheck | where {$_.gettype().name -eq 'ArrayList'} -ErrorAction SilentlyContinue)
@@ -377,17 +380,17 @@ Formulate Output
 		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
 
-	#splunk
+	# splunk
 	$rawData += "`r`n_____Splunk Check______" 
-	$rawData += ($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | fl
-	#tenable config
+	$rawData += $SplunkCheck[1] | ft
+	# tenable config
 	$rawData += "`r`n_____Tenable Check - Configuration______"
 	$rawData += $validateTenable[1] | fl
-	#tenable vulnerabilities
+	# tenable vulnerabilities
 	$rawData += "`r`n_____Tenable Check - Vulnerabilities______"
 	$rawData += $tennableVulnerabilities[1] | ft 
 
-	#format output for textfile
+	# format output for textfile
 	[System.Collections.ArrayList]$output = @()
 	$output += "Host Information :"
 	$output += "============================"

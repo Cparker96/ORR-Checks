@@ -40,7 +40,7 @@ function Get-SplunkSearch
     }
     elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
     {
-        $Searchstring = "search index=syslog* host=$($VmObj.Name) earliest=-60m | head 1"
+        $Searchstring = "search index=syslog* host=$($VmObj.Name) | head 1"
     }
     else{
         Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
