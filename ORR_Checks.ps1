@@ -426,7 +426,9 @@ Formulate Output
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
 		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
 		TicketNumber = $($HostInformation."Ticket Number");
-		Hostname = $($HostInformation.Hostname)}	
+		Hostname = $($HostInformation.Hostname);
+		Output_RealmJoinCheck = $($validaterealmjoin[1] | convertto-json -WarningAction SilentlyContinue);
+		Output_MMACheck = $($validateMMA[1] | convertto-json -WarningAction SilentlyContinue)}	
 	} elseif ($VMobj.StorageProfile.OsDisk.OsType -eq 'Linux') {
 		$sqloutput = [PSCustomObject]@{HostInformation = "$($HostInformation | convertto-json)";
 		EnvironmentSpecificInformation = "$($EnvironmentSpecificInformation | convertto-json)";
