@@ -70,7 +70,6 @@ Get variables
 #============================================#>
 Set-StrictMode -version 3 
 set-strictMode -Off
-[Uri]$Url = "https://textron.splunkcloud.com:8089"
 $VmRF = @()
 $AzCheck = @()
 $VMobj = @()
@@ -222,20 +221,18 @@ Log into VM and do pre domain join checks
 	}
 
 	Write-Host "Validating Splunk for $($Vmobj.Name)" -ForegroundColor Yellow
+
 	# splunk needs to be reformatted
 	write-host "Validating Splunk Authentication"
-
-	$splunkauth = Get-SplunkAuth -url $Url -SplunkCredential $SplunkCredential
+	$splunkauth = Get-SplunkAuth -SplunkCredential $SplunkCredential
 	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Search"
-
-	$splunksearch = Get-SplunkSearch -VmObj $VmObj -Url $url -Key $splunkauth[1]
+	$splunksearch = Get-SplunkSearch -VmObj $VmObj -SplunkCredential $SplunkCredential -Key $splunkauth[1]
 	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Result"
-
-	$splunkcheck = Get-SplunkResult -url $Url -Key $splunkauth[1] -Sid $splunksearch[1]
+	$splunkcheck = Get-SplunkResult -VmObj $VMobj -SplunkCredential $SplunkCredential -Sid $splunksearch[1]
 	Start-Sleep -Seconds 30
 
 <#============
@@ -452,6 +449,8 @@ Formulate Output
 		Hostname = $($HostInformation.Hostname);
 		Output_RealmJoinCheck = $($validaterealmjoin[1] | convertto-json -WarningAction SilentlyContinue);
 		Output_MMACheck = $($validateMMA[1] | convertto-json -WarningAction SilentlyContinue)}
+	} else {
+		Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
 	}
 
 <#==============================
