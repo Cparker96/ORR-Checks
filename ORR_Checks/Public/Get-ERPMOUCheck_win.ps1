@@ -8,24 +8,25 @@
     .EXAMPLE
 
     .NOTES
-        FunctionName    : Get-ERPMOUCheck
+        FunctionName    : Get-ERPMOUCheck_win
         Created by      : Cody Parker
         Date Coded      : 07/9/2021
         Modified by     : 
         Date Modified   : 
 
 #>
-Function Get-ERPMOUCheck
+Function Get-ERPMOUCheck_win
 {
     Param
     (
         [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+    $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     [System.Collections.ArrayList]$Validation = @()
     
     Try{
         $erpm = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_OU.ps1"
+        -ScriptPath "$ScriptPath\Validate_ERPM_OU_win.ps1"
     
         $validateerpm = $erpm.Value.message
 

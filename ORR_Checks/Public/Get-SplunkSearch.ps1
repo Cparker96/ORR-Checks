@@ -10,9 +10,9 @@
     .NOTES
         FunctionName    : Get-SplunkCheck
         Created by      : Cody Parker
-        Date Coded      : 09/7/2021
-        Modified by     : 
-        Date Modified   : 
+        Date Coded      : 09/07/2021
+        Modified by     : Cody Parker
+        Date Modified   : 10/18/2022
 
 #>
 
@@ -22,22 +22,27 @@ function Get-SplunkSearch
     Param
     (
         [Parameter(Mandatory=$true)]$VmObj,
-        [Parameter(Mandatory=$true)][Uri]$Url,
-        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Key
+        [Parameter(Mandatory=$true)] $SplunkCredential
     )
+
+    # declare endpoint and variables
+    $SearchUrl = "https://textron.splunkcloud.com:8089/services/search/jobs"
+    $username = $SplunkCredential.UserName
+    $password = $SplunkCredential.GetNetworkCredential().Password
     [System.Collections.ArrayList]$Validation = @()
 
-    if ($VmObj.Name -like "*IDC*") #if a domain controller - will always be windows
+    Write-Host "Querying Splunk for server logs"
+    if ($VmObj.Name -like "*IDC*") # if a domain controller - will always be windows
     {
         $Searchstring = "search index=win_event_dc* host=$($VmObj.Name) earliest=-60m | head 1"
     }
 
     #change the search string based on the OS type
-    If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') #if a windows server
+    If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows') # if a windows server
     {
         $Searchstring = "search index=win_event* host=$($VmObj.Name) earliest=-60m | head 1"
     }
-    elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') #if a Linux server
+    elseif($vmobj.StorageProfile.OsDisk.OsType -eq 'Linux') # if a Linux server
     {
         $Searchstring = "search index=syslog* host=$($VmObj.Name) earliest=-60m | head 1"
     }
@@ -45,26 +50,28 @@ function Get-SplunkSearch
         Write-Error "Can not determine OS image on Azure VM object" -ErrorAction Stop
     }
 
-    $Searchurl = $url.AbsoluteUri + "services/search/jobs"
+    $usercreds = "${username}:${password}"
+
+    # need to regex to get the sid
     [regex]$Jobsid = "(?<=<sid>)(.*)(?=<\/sid>)"
 
-    $onehourago = (Get-Date).AddHours(-1)
-    $rightnow = Get-Date
-    $startdate = [int64](($onehourago.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
-    $enddate = [int64](($rightnow.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
+    #### THE OLD WAY OF DOING THINGS - WHEN SPLUNK WAS ON PREM AND USING POWERSHELL ####
+    # $onehourago = (Get-Date).AddHours(-1)
+    # $rightnow = Get-Date
+    # $startdate = [int64](($onehourago.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
+    # $enddate = [int64](($rightnow.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
 
-    $Auth = @{'Authorization'=$Key}
-    $Body = @{
-        'search' = $Searchstring
-        'earliest_time' = $startdate
-        'latest_time' = $enddate
-    }
+    # $Auth = @{'Authorization'=$Key}
+    # $Body = @{
+    #     'search' = $Searchstring
+    #     'earliest_time' = $startdate
+    #     'latest_time' = $enddate
 
-    $Content = (Invoke-WebRequest -uri $Searchurl -Method Post -Headers $Auth -Body $Body -ContentType "application/json" -UseBasicParsing -ErrorAction Stop).content
+    $SearchContent = (curl -u $usercreds -k $SearchUrl -d search=$searchstring)
 
-    if($Content) 
+    if($SearchContent) 
     {
-        $Sid = $Jobsid.Match($Content).Value.ToString()
+        $Sid = $Jobsid.Match($SearchContent).Value.ToString()
         
         $validation.Add([PSCustomObject]@{System = 'Splunk'
         Step = 'SplunkCheck'
@@ -73,7 +80,7 @@ function Get-SplunkSearch
         FriendlyError = ''
         PsError = ''}) > $null
     } 
-    elseif (!$Content -OR !$Sid) 
+    elseif (!$SearchContent -OR !$Sid) 
     {
         $validation.Add([PSCustomObject]@{System = 'Splunk'
         Step = 'SplunkCheck'
@@ -83,6 +90,7 @@ function Get-SplunkSearch
         PsError = $PSItem.Exception}) > $null
     }
 
+    Write-Host "This function does not contain XML file creation and validation - only validating against the SID that's returned" -ForegroundColor Yellow
     Start-Sleep -Seconds 20
     
     return $validation, $Sid

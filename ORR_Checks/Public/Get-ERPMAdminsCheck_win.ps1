@@ -8,14 +8,14 @@
     .EXAMPLE
 
     .NOTES
-        FunctionName    : Get-ERPMAdminsCheck
+        FunctionName    : Get-ERPMAdminsCheck_win
         Created by      : Cody Parker
         Date Coded      : 07/9/2021
         Modified by     : 
         Date Modified   : 
 
 #>
-Function Get-ERPMAdminsCheck
+Function Get-ERPMAdminsCheck_win
 {
     Param
     (
@@ -23,6 +23,7 @@ Function Get-ERPMAdminsCheck
         #[parameter(Position = 1, Mandatory=$true)] $VmRF
        #[parameter(Position=2, Mandatory=$false)] $prodpass
     )
+    $ScriptPath = $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
     [System.Collections.ArrayList]$Validation = @()
     # $user = "sn.datacenter.integration.user"
 	# $pass = $prodpass
@@ -42,7 +43,7 @@ Function Get-ERPMAdminsCheck
 
     Try {
         $Admins = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$((get-module ORR_Checks).modulebase)\Private\Validate_ERPM_Admins.ps1" -ErrorAction Stop
+        -ScriptPath "$ScriptPath\Validate_ERPM_Admins_win.ps1" -ErrorAction Stop
 
         $checkadmins = $Admins.Value.message | ConvertFrom-Csv 
         

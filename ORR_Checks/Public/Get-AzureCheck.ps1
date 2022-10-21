@@ -55,14 +55,17 @@ Function Get-AzureCheck{
 
             if($Environment -eq 'AzureCloud'){
                 $tenant = '2d5b202c-8c07-4168-a551-66f570d429b3'
+                Write-Host "Logging into Azure Commercial"
                 connect-AzAccount -Environment $Environment -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment_Old'){
                 $tenant = '51ac4d1e-71ed-45d8-9b0e-edeab19c4f49'
+                Write-Host "Logging into Old Gov"
                 connect-AzAccount -Environment 'AzureUSGovernment' -tenant $tenant -ErrorAction Stop -WarningAction Ignore >$null
             }
             elseif($Environment -eq 'AzureUSGovernment'){
                 $tenant = 'b347614d-8a51-4dfe-8bf7-16d51e6f6db8'
+                Write-Host "Logging into GCC"
                 connect-AzAccount -Credential $GovAccount -Environment $Environment -tenant $tenant -ServicePrincipal -ErrorAction Stop -WarningAction Ignore >$null
             }     
         }
@@ -138,57 +141,57 @@ Function Get-AzureCheck{
     Validate VM Build Specs
     #=============================#>
 
-    $user = "sn.datacenter.integration.user"
+    # $user = "sn.datacenter.integration.user"
 
-	$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $prodpass)))
+	# $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $prodpass)))
 
-	$headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-	$headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
-	$headers.Add('Accept','application/json')
-    $headers.Add('Content-Type','application/json')
+	# $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+	# $headers.Add('Authorization',('Basic {0}' -f $base64AuthInfo))
+	# $headers.Add('Accept','application/json')
+    # $headers.Add('Content-Type','application/json')
 
-    # check server type
-    if ($VM.StorageProfile.ImageReference.Publisher -eq 'MicrosoftWindowsServer')
-    {
-        $CIclassname = "cmdb_ci_win_server"
-    } elseif ($VM.StorageProfile.OsDisk.OsType -eq "Linux") {
-        $CIclassname = "cmdb_ci_linux_server"
-    }
+    # # check server type
+    # if ($VM.StorageProfile.ImageReference.Publisher -eq 'MicrosoftWindowsServer')
+    # {
+    #     $CIclassname = "cmdb_ci_win_server"
+    # } elseif ($VM.StorageProfile.OsDisk.OsType -eq "Linux") {
+    #     $CIclassname = "cmdb_ci_linux_server"
+    # }
 
-    $body = "{
-           `"items`": [
-               {
-                    `"className`": `"$($CIclassname)`",
-                    `"lookup`": [],
-                    `"values`": {
-                        `"install_status`": `"1`",
-                        `"operational_status`": `"1`",
-                        `"name`": `"$($VmRF.Hostname)`"
-                    }
-                }
-            ],
-            `"relations`": []
-        }"
+    # $body = "{
+    #        `"items`": [
+    #            {
+    #                 `"className`": `"$($CIclassname)`",
+    #                 `"lookup`": [],
+    #                 `"values`": {
+    #                     `"install_status`": `"1`",
+    #                     `"operational_status`": `"1`",
+    #                     `"name`": `"$($VmRF.Hostname)`"
+    #                 }
+    #             }
+    #         ],
+    #         `"relations`": []
+    #     }"
 
-    # this will be a little messy since $body isn't really a true json obj that I can work with due to the tick marks that SNOW requires for CI's
-    $splitbody = $body.split('"')
-    $classname = $splitbody[5]
+    # # this will be a little messy since $body isn't really a true json obj that I can work with due to the tick marks that SNOW requires for CI's
+    # $splitbody = $body.split('"')
+    # $classname = $splitbody[5]
     
-    $createCIendpoint = "https://textronprod.servicenowservices.com/api/now/identifyreconcile?sysparm_data_source=Textron_Cloud_Automation"
-    $createCI = Invoke-RestMethod -Uri $createCIendpoint -Method 'POST' -Headers $headers -Body $body
-    start-sleep -Seconds 10
+    # $createCIendpoint = "https://textronprod.servicenowservices.com/api/now/identifyreconcile?sysparm_data_source=Textron_Cloud_Automation"
+    # $createCI = Invoke-RestMethod -Uri $createCIendpoint -Method 'POST' -Headers $headers -Body $body
+    # start-sleep -Seconds 10
 
-    # validate CI was created 
-    $newlycreatedCIendpoint = "https://textronprod.servicenowservices.com/api/now/cmdb/instance/$($classname)/$($createCI.result.items.sysId)"
-    $getnewlycreatedCI = Invoke-RestMethod -Uri $newlycreatedCIendpoint -Method GET -Headers $headers
+    # # validate CI was created 
+    # $newlycreatedCIendpoint = "https://textronprod.servicenowservices.com/api/now/cmdb/instance/$($classname)/$($createCI.result.items.sysId)"
+    # $getnewlycreatedCI = Invoke-RestMethod -Uri $newlycreatedCIendpoint -Method GET -Headers $headers
 
-    #validate that classname matches server type, name matches VM name, and status matches installed
-    if (($getnewlycreatedCI.result.attributes.sys_class_name -eq $classname) -and ($getnewlycreatedCI.result.attributes.name -eq $VmRF.Hostname) -and ($getnewlycreatedCI.result.attributes.hardware_status -eq 'installed'))
-    {
-        Write-Host "CI has been created under the name $($VmRF.Hostname) with the appropriate fields" -ForegroundColor Green
-    } else {
-        Write-Host "CI was created but some properties don't seem to be matching. Work with the SNOW team to troubleshoot" -ForegroundColor Yellow
-    }
+    # #validate that classname matches server type, name matches VM name, and status matches installed
+    # if (($getnewlycreatedCI.result.attributes.sys_class_name -eq $classname) -and ($getnewlycreatedCI.result.attributes.name -eq $VmRF.Hostname) -and ($getnewlycreatedCI.result.attributes.hardware_status -eq 'installed'))
+    # {
+    #     Write-Host "CI has been created under the name $($VmRF.Hostname) with the appropriate fields" -ForegroundColor Green
+    # } else {
+    #     Write-Host "CI was created but some properties don't seem to be matching. Work with the SNOW team to troubleshoot" -ForegroundColor Yellow
+    # }
 
 	# $sctaskmeta = "https://textronprod.servicenowservices.com/api/now/table/sc_task?sysparm_query=number%3D$($VmRF.'Ticket Number')&sysparm_fields=variables.azure_datacenter, `
 	# variables.azure_subscription,variables.resource_group,variables.date_needed,variables.operating_system,variables.amount_of_memory,variables.number_of_cores, `
@@ -401,7 +404,7 @@ Function Get-AzureCheck{
     Try
     {
         #Validate that all tags exist and meet syntax standards
-        $tags | test-json -schemafile "$ScriptPath\Tags_Definition.json" -ErrorAction stop > $null
+        $tags | test-json -schemafile "$ScriptPath\Tags_Definition_win.json" -ErrorAction stop > $null
         
         #if an error is not thrown then provide the 
         $Validation.add([PSCustomObject]@{System = 'Azure'

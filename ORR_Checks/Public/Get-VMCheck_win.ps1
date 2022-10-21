@@ -15,14 +15,14 @@
             
 
     .NOTES
-        FunctionName    : Get-VMCheck
+        FunctionName    : Get-VMCheck_win
         Created by      : Cody Parker
         Date Coded      : 04/21/2021
         Modified by     : 
         Date Modified   : 
 
 #>
-Function Get-VMCheck
+Function Get-VMCheck_win
 {
     Param
     (
@@ -39,7 +39,7 @@ Function Get-VMCheck
     {
         #InvokeAZVMRunCommand returns a string so you need to edit the file to convert the output as a csv 
         $output =  Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-            -ScriptPath "$ScriptPath\Service_Checks.ps1" -ErrorAction Stop
+            -ScriptPath "$ScriptPath\Validate_Services_win.ps1" -ErrorAction Stop
         
         #convert out of CSV so that we will get a object
         $services = $output.Value.message | convertfrom-csv
@@ -119,55 +119,9 @@ Function Get-VMCheck
         return $Validation, $Services, $null, $null
     }
 
-    <#============================================
-    Take hostname out of TIS_CMDB
-    #============================================#>
-    try 
-    {        
-        $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sqlDatabase -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [servername] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
- 
+    
 
-        if ($null -eq $connection)
-        {
-            $Validation.add([PSCustomObject]@{System = 'SQL'
-            Step = 'VmCheck'
-            SubStep = 'Server Name'
-            Status = 'Failed'
-            FriendlyError = 'Server Name is not in the SQL DB'
-            PsError = $PSItem.Exception}) > $null 
-        }
-        elseif('InUse' -ne $connection.status) 
-        {
-            $Validation.add([PSCustomObject]@{System = 'SQL'
-            Step = 'VmCheck'
-            SubStep = 'Server Name'
-            Status = 'Failed'
-            FriendlyError = 'Please update the Status of the Server in the SQL DB'
-            PsError = $PSItem.Exception}) > $null 
-        }
-        else{
-            $Validation.add([PSCustomObject]@{System = 'SQL'
-            Step = 'VmCheck'
-            SubStep = 'Server Name'
-            Status = 'Passed'
-            FriendlyError = ''
-            PsError = ''}) > $null 
-        }
-    }
-    catch 
-    {
-        $Validation.add([PSCustomObject]@{System = 'SQL'
-        Step = 'VmCheck'
-        SubStep = 'Server Name'
-        Status = 'Failed'
-        FriendlyError = 'Could not login to SQL DB'
-        PsError = $PSItem.Exception}) > $null 
-
-        return $Validation , $services, $updatelist, $null
-    }
-
-    return ($Validation, $services, $updatelist, $connection)
+    return ($Validation, $services, $updatelist)
 }
 
 
