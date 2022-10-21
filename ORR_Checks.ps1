@@ -228,11 +228,12 @@ Log into VM and do pre domain join checks
 	Start-Sleep -Seconds 30
 
 	write-host "Validating Splunk Search"
-	$splunksearch = Get-SplunkSearch -VmObj $VmObj -SplunkCredential $SplunkCredential -Key $splunkauth[1]
+	$splunksearch = Get-SplunkSearch -VmObj $VmObj -SplunkCredential $SplunkCredential
 	Start-Sleep -Seconds 30
-
+	$Sid = $splunksearch[1]
+	
 	write-host "Validating Splunk Result"
-	$splunkcheck = Get-SplunkResult -VmObj $VMobj -SplunkCredential $SplunkCredential -Sid $splunksearch[1]
+	$splunkcheck = Get-SplunkResult -VmObj $VMobj -SplunkCredential $SplunkCredential -Sid $Sid
 	Start-Sleep -Seconds 30
 
 <#============

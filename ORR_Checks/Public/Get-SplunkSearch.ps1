@@ -22,8 +22,7 @@ function Get-SplunkSearch
     Param
     (
         [Parameter(Mandatory=$true)]$VmObj,
-        [Parameter(Mandatory=$true)] $SplunkCredential,
-        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Key
+        [Parameter(Mandatory=$true)] $SplunkCredential
     )
 
     # declare endpoint and variables

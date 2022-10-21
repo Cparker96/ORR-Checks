@@ -21,12 +21,12 @@ function Get-SplunkResult
     Param
     (
         [Parameter(Mandatory=$true)]$VmObj,
-        [Parameter(Mandatory=$true)] $SplunkCredential,
-        [Parameter(Mandatory=$true)][ValidateNotNull()][string]$Sid
+        [Parameter(Mandatory=$true)]$SplunkCredential,
+        [Parameter(Mandatory=$true)]$Sid
     )
 
     # declare endpoint and variables
-    $JobResultUrl = "https://textron.splunkcloud.com:8089/services/search/jobs/$($Sid)/results"
+    $JobResultUrl = "https://textron.splunkcloud.com:8089/services/search/jobs/$Sid/results"
     $username = $SplunkCredential.UserName
     $password = $SplunkCredential.GetNetworkCredential().Password
     $usercreds = "${username}:${password}"
@@ -42,18 +42,36 @@ function Get-SplunkResult
     [xml]$xml = Get-Content .\Temp_Splunk_Log.xml
     $xmlvalidation = $xml.results.result.field.value.text
 
-    if ($xmlvalidation[1] -match $VmObj.Name)
+    # the $xmlvalidation variable changes (the index of where the server name lives is in a different position each time, and I'm not sure why)
+    Write-Host "Parsing XML output for Splunk result" -ForegroundColor Yellow
+    # setting initial counters for each time it loops through the $var
+    $logcorrect = 0
+    $logincorrect = 0
+    foreach ($log in $xmlvalidation)
     {
-        # converting object to string to be able to write to SQL DB
-        $convertxmlarray = Out-String -InputObject $Resultcontent
+        if ($log -notlike $VmObj.Name)
+        {
+            $logincorrect++
+            # go to the next index in the loop
+            continue
+        } else {
+            Write-Host "Validated Splunk log" -ForegroundColor Green
+            $logcorrect++
 
-        $validation.Add([PSCustomObject]@{System = 'Splunk'
-        Step = 'SplunkCheck'
-        SubStep = 'Validate Splunk Log'
-        Status = 'Passed'
-        FriendlyError = ''
-        PsError = ''}) > $null
-    } else {
+            $validation.Add([PSCustomObject]@{System = 'Splunk'
+            Step = 'SplunkCheck'
+            SubStep = 'Validate Splunk Log'
+            Status = 'Passed'
+            FriendlyError = ''
+            PsError = ''}) > $null
+
+            # break the loop
+            break
+        }
+    }
+
+    if ($logcorrect.count -eq 0)
+    {
         $validation.Add([PSCustomObject]@{System = 'Splunk'
         Step = 'SplunkCheck'
         SubStep = 'Validate Splunk Log'
@@ -61,6 +79,9 @@ function Get-SplunkResult
         FriendlyError = 'Could not retrieve logs for Splunk'
         PsError = $PSItem.Exception}) > $null
     }
+
+    # converting object to string to be able to write to SQL DB
+    $convertxmlarray = Out-String -InputObject $Resultcontent
 
     # delete the temp XML file and check to see if its been removed in the current working directory
     Remove-Item -Path .\Temp_Splunk_Log.xml
