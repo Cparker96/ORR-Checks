@@ -188,6 +188,7 @@ Log into VM and do pre domain join checks
 		$VmCheck = Get-VMCheck_win -VmObj $VmObj -SqlCredential $SqlCredential -SqlInstance $sqlInstance -SqlDatabase $sqlDatabase
 		$VmRF.'Operating System' = 'Windows'
 
+		Start-Sleep -Seconds 30
 		# validate ERPM (windows only)
 		write-host "Validating ERPM for $($Vmobj.Name)"
 		$validateErpmOU = Get-ERPMOUCheck_win -vmobj $VmObj
@@ -195,7 +196,7 @@ Log into VM and do pre domain join checks
 
 		# validate McAfee (windows only)
 		write-host "Validating McAfee for $($Vmobj.Name)"
-		$validateMcafee = Get-McAfeeCheck_winhj -vmobj $VmObj 
+		$validateMcafee = Get-McAfeeCheck_win -vmobj $VmObj 
 
 		# validating hostname entry status in SQL
 		$validatehostname = Get-HostNameSQL -VmObj $VmObj -SqlCredential $SqlCredential -sqlInstance $sqlInstance -sqlDatabase $sqlDatabase
