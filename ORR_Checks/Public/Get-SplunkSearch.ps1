@@ -90,6 +90,7 @@ function Get-SplunkSearch
         PsError = $PSItem.Exception}) > $null
     }
 
+    Write-Host "This function does not contain XML file creation and validation - only validating against the SID that's returned" -ForegroundColor Yellow
     Start-Sleep -Seconds 20
     
     return $validation, $Sid
