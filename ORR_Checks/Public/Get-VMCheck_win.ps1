@@ -84,7 +84,7 @@ Function Get-VMCheck_win
     try 
     {
         $validateupdates = Invoke-AzVMRunCommand -ResourceGroupName $VmObj.ResourceGroupName -VMName $VmObj.Name -CommandId 'RunPowerShellScript' `
-        -ScriptPath "$ScriptPath\Validate_Updates.ps1" -ErrorAction Stop
+        -ScriptPath "$ScriptPath\Validate_Updates_win.ps1" -ErrorAction Stop
         
         $updatelist = $validateupdates.Value.message
 
