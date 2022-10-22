@@ -26,12 +26,9 @@ Function Get-VMCheck_win
 {
     Param
     (
-        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj,
-        [parameter(Position = 1, Mandatory=$true)] $SqlCredential,
-        [parameter(Position = 2, Mandatory=$true)] $sqlInstance,
-        [parameter(Position = 3, Mandatory=$true)] $sqlDatabase
-
+        [parameter(Position = 0, Mandatory=$true)] [Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine] $VmObj
     )
+
     [System.Collections.ArrayList]$Validation = @()
     $ScriptPath = "$((get-module ORR_Checks).modulebase)\Private"
 
@@ -75,7 +72,7 @@ Function Get-VMCheck_win
         FriendlyError = 'Could not retrieve services'
         PsError = $PSItem.Exception}) > $null 
 
-        return $Validation, $null, $null, $null
+        return $Validation
     }
 
     <#============================================

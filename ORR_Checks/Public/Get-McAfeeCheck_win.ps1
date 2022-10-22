@@ -67,7 +67,7 @@ Function Get-McAfeeCheck_win
         $validatemcafee = $mcafee.Value.message | ConvertFrom-Csv
 
         # get the date of the last reported date in McAfee - convert to datetime, subtract 6 hrs - then convert back to string
-        $lastreportdate = $validatemcafee[11].'Component: McAfee Agent '.Trim('LastASCTime: ')
+        $lastreportdate = $validatemcafee[11].'Component: Trellix Agent '.Trim('LastASCTime: ')
         $cutofftime = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).AddHours(-6).ToString("yyyyMMddHHmmss")
         
         $convertedbackdate = [datetime]::ParseExact($lastreportdate, "yyyyMMddHHmmss", $null).ToString("yyyy-MM-dd HH:mm:ss")

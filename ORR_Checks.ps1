@@ -185,7 +185,7 @@ Log into VM and do pre domain join checks
 
 	If($vmobj.StorageProfile.OsDisk.OsType -eq 'Windows')
 	{
-		$VmCheck = Get-VMCheck_win -VmObj $VmObj -SqlCredential $SqlCredential -SqlInstance $sqlInstance -SqlDatabase $sqlDatabase
+		$VmCheck = Get-VMCheck_win -VmObj $VmObj
 		$VmRF.'Operating System' = 'Windows'
 
 		Start-Sleep -Seconds 30
@@ -423,7 +423,7 @@ Formulate Output
 		Output_ERPMCheck_Admins = "$($validateErpmAdmins[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_McafeeCheck_Configuration = "$($validateMcafee[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_McafeeCheck_Checkin = "$($validateMcafee[2] | convertto-json -WarningAction SilentlyContinue)";
-		Output_SplunkCheck = "$(($SplunkCheck[1] | convertfrom-json -ErrorAction SilentlyContinue).results | convertto-json -WarningAction SilentlyContinue)";
+		Output_SplunkCheck = $SplunkCheck[1];
 		Output_TenableCheck_Configuration = "$($validateTenable[1] | convertto-json -WarningAction SilentlyContinue)";
 		Output_TenableCheck_Vulnerabilites = "$($tennableVulnerabilities[1] | convertto-json -WarningAction SilentlyContinue)";
 		DateTime = [DateTime]::ParseExact($((get-date $date -format 'YYYY-MM-dd hh:mm:ss')), 'YYYY-MM-dd hh:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture);
