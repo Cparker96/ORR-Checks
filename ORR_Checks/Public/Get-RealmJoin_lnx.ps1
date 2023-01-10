@@ -13,8 +13,8 @@
         FunctionName    : Get-RealmJoin
         Created by      : Cody Parker
         Date Coded      : 09/08/2022
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 
@@ -41,7 +41,7 @@ function Get-RealmJoin_lnx
         # if you have a good way to parse this ugly output of a file a better way, by all means...
 
         # checking for the two groups that must be in the /etc/sudoers file assuming a successful realm join
-        if (($realmjoin -like "*ADM_SRV_AZU*") -and ($realmjoin -like "*SA_$($vmobj.Name)*"))
+        if (($realmjoin -like "your_AD_group_name") -and ($realmjoin -like "*SA_$($vmobj.Name)*"))
         {
             $Validation.add([PSCustomObject]@{System = 'Server'
             Step = 'Realm Join'

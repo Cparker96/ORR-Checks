@@ -13,8 +13,8 @@
         FunctionName    : Get-MMACheck_lnx
         Created by      : Cody Parker
         Date Coded      : 09/12/2022
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 
@@ -28,7 +28,7 @@ Function Get-MMACheck_lnx
     [System.Collections.ArrayList]$Validation = @()
 
     # set LAW values
-    $workspace = 'e0225178-cc8b-4aa2-9422-0df2fa85cff9'  
+    $workspace = 'your_workspace_id'  
     $searchquery = "Heartbeat
     | where OSType == 'Linux'
     | summarize arg_max(TimeGenerated, *) by SourceComputerId

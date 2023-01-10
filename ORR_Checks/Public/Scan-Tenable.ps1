@@ -4,15 +4,15 @@
     .DESCRIPTION
         This Function Starts a tenable scan in the tenable application
     .PARAMETER Environment
-        the access key and the secret key for Tennable API
+        the access key and the secret key for Tenable API
     .EXAMPLE
 
     .NOTES
         FunctionName    : Scan-Tenable
         Created by      : Cody Parker
         Date Coded      : 07/7/2021
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 Function Scan-Tenable
@@ -46,27 +46,27 @@ Function Scan-Tenable
 
     try 
     {
-        # get US East Cloud Scanner info
+        # get scanner info
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-        $useastcloudscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'US East Cloud Scanners'}
+        $useastcloudscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'your_scan_group'}
 
-        # get TextronOnPrem Scanner info
+        # get scanner info
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $headers.Add('Accept', 'application/json')
-        $resource = "https://cloud.tenable.com/scanners"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-        $txtonpremscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'TextronOnPrem'}
+        $txtonpremscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'your_scan_group'}
 
-        # list all AzureOnBoarding scan info
+        # list all scan info
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scans"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-        $azureonboardingscans = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scans | where {$_.name -like "*AzureOnBoardingScan*"} | sort name
+        $azureonboardingscans = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scans | where {$_.name -like "*your_scan"} | sort name
 
         if (($null -eq $useastcloudscanner) -or ($null -eq $txtonpremscanner) -or ($null -eq $azureonboardingscans))
         {
@@ -103,7 +103,7 @@ Function Scan-Tenable
             Write-Host "Getting the status for $($scan.name)" -ForegroundColor Yellow
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
+            $resource = "your_tenable_endpoint"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $prescanstatus = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).status
 
@@ -136,7 +136,7 @@ Function Scan-Tenable
             # change target ip of the scan to the machine
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            $resource = "https://cloud.tenable.com/scans/$($scan.id)"
+            $resource = "your_tenable_endpoint"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $body = @{
                 "settings" = @{
@@ -182,7 +182,7 @@ Function Scan-Tenable
             # launch the scan
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            $resource = "https://cloud.tenable.com/scans/$($scan.schedule_uuid)/launch"
+            $resource = "your_tenable_endpoint"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $launchscan = Invoke-RestMethod -Uri $resource -Method Post -Headers $headers
 
@@ -221,7 +221,7 @@ Function Scan-Tenable
         # check initial scan status
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
         $scanstatus = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers 
 
@@ -233,7 +233,7 @@ Function Scan-Tenable
         Start-Sleep -Seconds 600
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
         $scanstatus = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers  
         }
@@ -243,7 +243,7 @@ Function Scan-Tenable
             # get the latest scan status
             $headers = $null
             $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            $resource = "https://cloud.tenable.com/scans/$($scan.id)/latest-status"
+            $resource = "your_tenable_endpoint"
             $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
             $postscanstatus = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).status
 
@@ -253,7 +253,7 @@ Function Scan-Tenable
                 # get all vulns from scan results
                 $headers = $null
                 $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-                $resource = "https://cloud.tenable.com/scans/2300"
+                $resource = "your_tenable_endpoint"
                 $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")       
                 $vulns = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).vulnerabilities | where {($_.severity -ge 2) -and ($_.plugin_name -notlike "*McAfee*")}
             } else {
@@ -266,37 +266,6 @@ Function Scan-Tenable
                 FriendlyError = "$($scan.name) was interrupted by someone or other operation. Please try again"
                 PsError = $PSItem.Exception}) > $null 
             }
-
-            # if ($vulns.plugin_id -in 51192,57582)
-            # {
-            #     foreach ($vuln in $vulns.plugin_id)
-            #     {
-            #     # get asset info
-            #     $headers = $null
-            #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     $resource = "https://cloud.tenable.com/workbenches/assets?date_range=30&filter.0.filter=host.target&filter.0.quality=match&filter.0.value=txainfazu902&filter.search_type=and"
-            #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
-            #     $asset = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).assets
-
-            #     $headers = $null
-            #     $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     $resource = "https://cloud.tenable.com/workbenches/assets/1f803460-4afa-477e-9bba-658b3fda9cb8/vulnerabilities/57582/outputs"
-            #     $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
-            #     $x = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
-                
-            #     # $headers = $null
-            #     # $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     # $resource = "https://cloud.tenable.com/scans/$($azureonboardingscans[1].id)/history"
-            #     # $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
-            #     # $b = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
-
-            #     # $headers = $null
-            #     # $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-            #     # $resource = "https://cloud.tenable.com/scans/$($azureonboardingscans[1].id)/history/$($b[0].scan_uuid)"
-            #     # $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey") 
-            #     # $c = Invoke-RestMethod -Uri $resource -Method Get -Headers $headers
-            #     }
-            # }
 
             if ($vulns.count -eq 0)
             {

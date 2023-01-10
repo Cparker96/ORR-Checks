@@ -1,89 +1,31 @@
-# Introduction 
-An Automation of VM Operational Readiness Review found here:<br>
+<h2>Overview</h2>
 
-[Server Build ORR Checklist](https://ontextron.sharepoint.com/:w:/r/sites/TISMidrange/Shared%20Documents/Cloud%20Ops/Azure/Delivery%20Packets/Server%20Build%20ORR%20Checklist.docx?d=wa85f08a1d3aa416d83afb1dc087b8b59&csf=1&web=1&e=2CjJFB)
+This readme will be fully dedicated to the ORR Checks repository that serves as a custom powershell module to verify that an Azure virtual machine is ready for handoff once it has been vetted for any vulnerabilities, domain joined, and other checks to the server. 
 
-## Access Requirements
-Your Azure Contributor role Must be checked out over the scope of the VM you are running the ORR on
+All resource and other utilities such as variable names, keys, and links have been sanitized and have been replaced by the word "your" followed by a general description of what the resource entails (Ex: $key = "your_key").
 
-## Module Requirements
-* Powershell - Version Min "7.1.2"
-* Azure Module "AZ" - Version Min "5.5.0"
-* Dbatools - Version Min "1.0.148"
+<h2>Description</h2>
 
-## Data Sources
-To determine Readiness there are multiple data sources to check 
-1.	Service Now Server Request Ticket
-2.  Azure Portal
-3.	Tenable - https://cloud.tenable.com/ 
-4.	Splunk - https://splk.textron.com:8089/
-5.	McAfee - https://txasecapp001.txt.textron.com/
-6.  Active Directory
-7.  Cloud Operation's Database - txadbsazu001.database.windows.net
-8.  Cloud Operation's Azure Blob - https://tisutility.blob.core.windows.net/orrchecks 
+The ORR process, short for Operational Readiness Review, is a process that is utilized when someone submits a ticket request for a new virtual machine build inside the Azure Portal. A vendor will go out and build the VM to the requestor's needs in terms of size, number of cores, RAM, location, etc. Once complete, a member of the Cloud Operations team will execute the ORR process which includes validating that certain services are running (McAfee, Splunk, Tenable, etc.) through specific APIs, validates that it is domain joined within Active Directory, and validates that no existing vulnerabilities exist on the server.
 
-## Importing Modules
-To import a local module follow the below steps: 
-1. Download the ORR Check files from the Azure Blob and download the file with the most current datetime stamp.
-2. Make sure you do not already have a copy of the ORR_Check module on your computer and remove the folder in that path until the below script returns nothing.<br> 
-```powershell
-get-module ORR_Checks
-```
-3. Make sure the module was also cleaned up from your session<br>
+Once the server has cleared ORR, the server will be handed off to the requestor, allowing them to install any necessary applications and software. 
+
+<h2>Usage</h2>
+
+1. Open a code editor of your choice with the parent ORR_Checks folder
+2. Fill out the VM_Request_Fields.json file with server metadata and save it
+3. Make sure you don't have a copy of a previous version of the module and its contents
 ```powershell
 get-module ORR_Checks | remove-module
 ```
-4. Import the module into your session by changing into the root directory that holds the ORR_Checks folder then importing the module in the ORR_Checks folder<br>
+4. Load the custom powershell module into your session
+  ```powershell
+  import-module .\ORR_Checks\
+  ```
+   - The Private folder will house any files that include commands that need to be executed on the server via an RDP connection and return data back to the localhost.
+   - The Public folder will include the powershell functions that utilize the data returned from the commands in the files of the Private folder and perform checks and conditional logic for the ORR process.
+   - The ORR_Checks.ps1 file will serve as the "control" script and utilize all functions in the Public folder, format the data properly, output to a SQL database, and create a text file in the localhost's C:\Temp directory of the raw data.
+5. Dot source and execute the ORR_Checks.ps1 file
 ```powershell
-import-module .\ORR_Checks\
+.\ORR_Checks.ps1
 ```
-5. Make sure the version is the expected version and that the import was successful.<br>
-```powershell
-get-module ORR_Checks
-```
-
-## Running the Script
-1. Make sure you are in the root directory for the ORR_Checks folder
-2. Update and save the values for VM_Request_Fields.json using valid JSON syntax. 
-3. Run ORR_Checks.ps1 by . sourcing the file while in the correct working directory<br>
-```powershell
-.\Orr_Checks.ps1
-```
-4. Upload the text file in your temp drive named SERVERNAME_yyyy-MM-dd.HH.mm.txt to the Snow ticket once all steps have correctly passed. 
-
-## Server Build Process (*Assuming a normal server build*)
-1. A new server request gets created through ServiceNow. The ticket is assigned to the Vendor technician
-2. The Vendor creates the server in Azure according to the specs provided in the ticket
-3. The Vendor RDP's into the newly created machine using a local account that they maintain
-4. Build scripts 0-7 are executed by the Vendor technician. Script repo is maintained by Cloud Ops team
-    - Server name status is updated via SQL tables
-5. The Vendor will then utilize the ORR_Checks module to go through the ORR process via Textron policy
-    - Refer to the 'Importing Modules' section above for module importing/execution
-6. Run the Orr Checks script as described above.
-7. The text file will be attached to the ticket request that was originally submitted through ServiceNow as ORR Evidence. 
-
-## Notes on ORR execution
-* If you receive any sort of error in the text file or forgot to do something on the server, you will have to rerun all of the code in ORR_Checks.ps1.
-
-* If you do not want to run the Tennable scan then you can set the following value in the VM_Request_Fields.Json.<br>
-```json
-"RunTenableScan" : "No" 
-```
-Any value other than "No" will result in the tenable scan running.
-
-* You may run the ORR_Checks.ps1 as many times as you need but to pass ORR all fields must have Passed or Failed as expected 
-  - Servers not AD joined will fail correctly on the ERPMCheck - ActiveDirectory OU Step. Please specify this is intentional in the ticket. 
-
-* In VM_Request_Fields.Json the "Environment" parameter must be one of the following values : 
- - Public Cloud - "AzureCloud" 
- - Azure Gov - "AzureUSGovernment_Old"
- - Azure Gov GCC High - "AzureUSGovernment"
-
-* Every file has a three character code appended to the end of it indicating which OS or environment it belongs to for performing ORR
- - win = windows (azure)
- - lnx = linux (azure)
- - vmw = vmware
- - if it does not have a character code appended at the end of the file name, then it is used by all servers regardless of OS and environment
-
-## Need help?
-If there are any questions please reach out to CloudOps@Textron.com via email with the textfile output, Server Name, Ticket Number, and Timestamp of the run you are having trouble with. 

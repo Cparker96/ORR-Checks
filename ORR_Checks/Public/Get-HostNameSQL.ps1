@@ -13,8 +13,8 @@
         FunctionName    : Get-HostNameSQL
         Created by      : Cody Parker
         Date Coded      : 09/15/2022
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 
@@ -34,7 +34,7 @@ function Get-HostNameSQL
     try 
     {        
         $connection = Invoke-DbaQuery -SqlInstance $sqlInstance -Database $sqlDatabase -SqlCredential $SqlCredential `
-            -Query "(select * from dbo.AzureAvailableServers where [servername] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
+            -Query "(select * from 'your_sql_table' where [servername] = @Name)" -SqlParameters @{Name = $VmObj.Name} -EnableException
  
         if ($null -eq $connection)
         {

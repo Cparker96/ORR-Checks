@@ -1,62 +1,4 @@
 
-<#
-    .SYNOPSIS
-        The main file to run the Server Operational Readdiness Review (ORR) process
-    .DESCRIPTION
-        the Ps1 that actually runs the ORR workflow and outputs the validation steps
-	.PARAMETER Hostname
-		The Server name of the Server being ORR'd
-    .PARAMETER Environment
-		Specifies the Cloud platform and tennant to connect to
-			Public Cloud - "AzureCloud" 
-			Azure Gov - "AzureUSGovernment_Old"
-			Azure Gov GCC High - "AzureUSGovernment" 
-    .PARAMETER Subscription
-		The friendly name of the subscription where the VM was built
-    .PARAMETER Resource Group
-		The Resource group name where the VM was built
-    .PARAMETER Operating System
-		Can be left null but a simple Windows or Linux is prefered
-    .PARAMETER Requestor
-		The name of the VM requestor
-    .PARAMETER Created By
-		The name of the IT professional who did the build
-    .PARAMETER Ticket Number
-		The Snow ticket that stared the build process and where the requirements and approvals are sourced 
-    .PARAMETER RunTenableScan
-		A quick way to not run the tennable scan (aprox 1 hour) for testing purposes. 
-		Approved Values
-			"Yes"
-			"No"
-
-    .EXAMPLE
-		{
-			"Hostname" : "TXAINFAZU021",
-			"Environment" : "AzureCloud",
-			"Subscription" : "Enterprise",
-			"Resource Group" : "308-Utility",
-			"Operating System" : "",
-			"Requestor" : "Christopher Reilly",
-			"Created By" : "Ricky Barbour",
-			"Ticket Number" : "SCTASK0014780", 
-			"RunTenableScan" : "Yes"
-		}       
-
-    .NOTES
-        Created by      : Cody Parker and Claire Larvin
-        Date Coded      : 04/16/2021
-        Modified by     : Claire Larvin
-        Date Modified   : 1/26/2022
-
-Links:
-	Nuget powershell module 
-		https://docs.microsoft.com/en-us/azure/devops/artifacts/tutorials/private-powershell-library?view=azure-devops
-#>
-
-
-#============================================#>
-
-
 <#============================================
 import-module if the version in this folder isn't the one that you have
 #============================================#>
@@ -87,8 +29,8 @@ $validateTenable = @()
 $agentinfo = @()
 $tennableVulnerabilities = @()
 $SqlCredential = @()
-$sqlInstance = 'txadbsazu001.database.windows.net'
-$sqlDatabase = 'TIS_CMDB'
+$sqlInstance = 'your_sql_instance'
+$sqlDatabase = 'your_sql_database'
 
 # get Server Build variables from VM_Request_Fields.json
 Try
@@ -103,17 +45,17 @@ Get Credentials
 Try{
 	# connect to Public azure and make sure the context is Enterprise where the keyvault exists
 	disconnect-azaccount > $null
-	Connect-AzAccount -Environment AzureCloud -Tenant '2d5b202c-8c07-4168-a551-66f570d429b3' -WarningAction ignore > $null
-	Set-AzContext -Subscription 'Enterprise' > $null
+	Connect-AzAccount -Environment AzureCloud -Tenant 'your_tenant' -WarningAction ignore > $null
+	Set-AzContext -Subscription 'your_subscription' > $null
 
-	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableAccessKey-10m' -AsPlainText 
-	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-TenableSecretKey-10m' -AsPlainText 
-	$gccappid = Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'Decom-GCC-App-ID' -AsPlainText
-    $gccappsecret = Get-AzKeyVaultSecret -VaultName 'kv-308' -Name 'Decom-GCC-Client-Secret' -AsPlainText
-    $SqlCredential = New-Object System.Management.Automation.PSCredential ('ORRCheckSql', ((Get-AzKeyVaultSecret -vaultName "kv-308" -name 'ORRChecks-Sql').SecretValue))
-	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-Splunk').SecretValue)) 
+	$TenableAccessKey = Get-AzKeyVaultSecret -vaultName 'your_vault_name' -name 'your_secret_name' -AsPlainText 
+	$TenableSecretKey = Get-AzKeyVaultSecret -vaultName 'your_vault_name' -name 'your_secret_name' -AsPlainText 
+	$gccappid = Get-AzKeyVaultSecret -VaultName 'your_vault_name' -Name 'your_secret_name' -AsPlainText
+    $gccappsecret = Get-AzKeyVaultSecret -VaultName 'your_vault_name' -Name 'your_secret_name' -AsPlainText
+    $SqlCredential = New-Object System.Management.Automation.PSCredential ('your_secret_name', ((Get-AzKeyVaultSecret -vaultName "your_vault_name" -name 'your_secret_name').SecretValue))
+	$SplunkCredential = New-Object System.Management.Automation.PSCredential ('svc_tis_midrange', ((Get-AzKeyVaultSecret -vaultName 'your_vault_name' -name 'your_secret_name').SecretValue)) 
 	#$GovAccount = New-Object System.Management.Automation.PSCredential ('768ca4de-5c94-4879-9c74-be8d0217ff01',((Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'ORRChecks-GCCHAccess').SecretValue))
-	$prodpass = Get-AzKeyVaultSecret -vaultName 'kv-308' -name 'SNOW-API-Password' -AsPlainText 
+	$prodpass = Get-AzKeyVaultSecret -vaultName 'your_vault_name' -name 'your_secret_name' -AsPlainText 
 }
 Catch{
 	Write-Error "could not get keys from key vault" -ErrorAction Stop
@@ -484,5 +426,5 @@ $DataTable = $sqloutput | ConvertTo-DbaDataTable
 
 $DataTable | Write-DbaDbTableData -SqlInstance $sqlinstance `
 -Database $sqlDatabase  `
--Table dbo.ORR_Checks `
+-Table 'your_sql_table' `
 -SqlCredential $SqlCredential 

@@ -11,8 +11,8 @@
         FunctionName    : Get-SplunkCheck
         Created by      : Cody Parker
         Date Coded      : 09/07/2021
-        Modified by     : Cody Parker
-        Date Modified   : 10/18/2022
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 function Get-SplunkAuth
@@ -24,7 +24,7 @@ function Get-SplunkAuth
     )
     
     # declare endpoint and credentials
-    $AuthUrl = "https://textron.splunkcloud.com:8089/services/auth/login"
+    $AuthUrl = "your_splunk_endpoint"
     $username = $SplunkCredential.UserName
     $password = $SplunkCredential.GetNetworkCredential().Password
     [System.Collections.ArrayList]$Validation = @()

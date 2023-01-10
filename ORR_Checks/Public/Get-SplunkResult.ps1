@@ -11,8 +11,8 @@
         FunctionName    : Get-SplunkCheck
         Created by      : Cody Parker
         Date Coded      : 09/07/2021
-        Modified by     : Cody Parker
-        Date Modified   : 10/18/2022
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 function Get-SplunkResult 
@@ -26,7 +26,7 @@ function Get-SplunkResult
     )
 
     # declare endpoint and variables
-    $JobResultUrl = "https://textron.splunkcloud.com:8089/services/search/jobs/$Sid/results"
+    $JobResultUrl = "your_splunk_endpoint"
     $username = $SplunkCredential.UserName
     $password = $SplunkCredential.GetNetworkCredential().Password
     $usercreds = "${username}:${password}"

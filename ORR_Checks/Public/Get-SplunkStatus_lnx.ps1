@@ -11,8 +11,8 @@
         FunctionName    : Get-SplunkStatus_lnx
         Created by      : Cody Parker
         Date Coded      : 09/08/2022
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 

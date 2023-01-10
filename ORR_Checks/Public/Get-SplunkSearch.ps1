@@ -11,8 +11,8 @@
         FunctionName    : Get-SplunkCheck
         Created by      : Cody Parker
         Date Coded      : 09/07/2021
-        Modified by     : Cody Parker
-        Date Modified   : 10/18/2022
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 
@@ -26,7 +26,7 @@ function Get-SplunkSearch
     )
 
     # declare endpoint and variables
-    $SearchUrl = "https://textron.splunkcloud.com:8089/services/search/jobs"
+    $SearchUrl = "your_splunk_endpoint"
     $username = $SplunkCredential.UserName
     $password = $SplunkCredential.GetNetworkCredential().Password
     [System.Collections.ArrayList]$Validation = @()
@@ -54,18 +54,6 @@ function Get-SplunkSearch
 
     # need to regex to get the sid
     [regex]$Jobsid = "(?<=<sid>)(.*)(?=<\/sid>)"
-
-    #### THE OLD WAY OF DOING THINGS - WHEN SPLUNK WAS ON PREM AND USING POWERSHELL ####
-    # $onehourago = (Get-Date).AddHours(-1)
-    # $rightnow = Get-Date
-    # $startdate = [int64](($onehourago.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
-    # $enddate = [int64](($rightnow.ToUniversalTime()) - (get-date "1/1/1970")).TotalSeconds
-
-    # $Auth = @{'Authorization'=$Key}
-    # $Body = @{
-    #     'search' = $Searchstring
-    #     'earliest_time' = $startdate
-    #     'latest_time' = $enddate
 
     $SearchContent = (curl -u $usercreds -k $SearchUrl -d search=$searchstring)
 

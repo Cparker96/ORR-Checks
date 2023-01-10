@@ -12,8 +12,8 @@
         FunctionName    : Get-TenableCheck
         Created by      : Cody Parker
         Date Coded      : 07/7/2021
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 
@@ -29,12 +29,12 @@ Function Get-TenableCheck
 
     try 
     {
-        # get US East Cloud Scanner info
+        # get scanner info
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-        $useastcloudscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'US East Cloud Scanners'}
+        $useastcloudscanner = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).scanners | where {$_.name -eq 'your_scanner_group'}
     }
     catch {
         $validation.Add([PSCustomObject]@{System = 'Tenable'
@@ -49,17 +49,17 @@ Function Get-TenableCheck
 
     try 
     {
-        # get weekly scans ID
+        # get scan ID
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners/$($useastcloudscanner.id)/agent-groups"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
-        $weeklyscansgroup = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).groups | where {$_.name -eq 'WeeklyScans'}
+        $weeklyscansgroup = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).groups | where {$_.name -eq 'your_scan_name'}
     }
     catch {
         $validation.Add([PSCustomObject]@{System = 'Tenable'
         Step = 'TenableCheck'
-        SubStep = 'Get WeeklyScans Info'
+        SubStep = 'Get scan Info'
         Status = 'Failed'
         FriendlyError = "Failed to fetch agent group info"
         PsError = $PSItem.Exception}) > $null
@@ -68,18 +68,18 @@ Function Get-TenableCheck
     }
 
     try{
-        # grab the agents in the agent group 'WeeklyScans' details
+        # grab the agents in the agent group details
         $headers = $null
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-        $resource = "https://cloud.tenable.com/scanners/null/agent-groups/$($weeklyscansgroup.id)?offset=0&limit=200&sort=name:asc&wf=core_version,distro,groups,ip,name,platform,status&w=$($vmobj.Name)"
+        $resource = "your_tenable_endpoint"
         $headers.Add("X-ApiKeys", "accessKey=$TenableAccessKey; secretKey=$TenableSecretKey")
         $agentinfo = (Invoke-RestMethod -Uri $resource -Method Get -Headers $headers).agents
 
-        # if agent status is not online or initializing and not in weekly scans group
-        if (($agentinfo.status -ne 'on') -or ($agentinfo.status -ne 'init') -and ($agentinfo.groups.name -notcontains 'WeeklyScans'))
+        # if agent status is not online or initializing and not in scan group
+        if (($agentinfo.status -ne 'on') -or ($agentinfo.status -ne 'init') -and ($agentinfo.groups.name -notcontains 'your_scan_name'))
         {
             Write-Host "Please check the agent for the server" -ForegroundColor Red
-            #add a row to the vailidation object for incorrect configuration in tenable
+            # add a row to the validation object for incorrect configuration in tenable
             $validation.Add([PSCustomObject]@{System = 'Tenable'
             Step = 'TenableCheck'
             SubStep = 'Tenable Configuration'
@@ -87,7 +87,7 @@ Function Get-TenableCheck
             FriendlyError = "Please check the agent for the server"
             PsError = $PSItem.Exception}) > $null
         } else {
-            #add a row to the vailidation for correct configuration
+            # add a row to the vailidation for correct configuration
             $validation.Add([PSCustomObject]@{System = 'Tenable'
             Step = 'TenableCheck'
             SubStep = 'Tenable Configuration'

@@ -11,8 +11,8 @@
         FunctionName    : Get-McAfeeCheck
         Created by      : Cody Parker
         Date Coded      : 07/8/2021
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 #>
 Function Get-McAfeeCheck_win
 {
@@ -34,7 +34,7 @@ Function Get-McAfeeCheck_win
 
         $mcafeeprograms = $programs.value.message | ConvertFrom-Csv
 
-        if ($mcafeeprograms.Name -ne "Trellix Agent") {
+        if ($mcafeeprograms.Name -ne "your_agent_name") {
             $validation.Add([PSCustomObject]@{System = 'Server'
             Step = 'McAfeeCheck'
             SubStep = 'Agent Configuration'

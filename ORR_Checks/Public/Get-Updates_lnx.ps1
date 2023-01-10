@@ -11,8 +11,8 @@
         FunctionName    : Get-Updates_lnx
         Created by      : Cody Parker
         Date Coded      : 09/09/2022
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 #>
 
 function Get-Updates_lnx
@@ -96,23 +96,5 @@ function Get-Updates_lnx
         return $Validation
     }
 
-# this is the old way of doing the operation above ^^^
-<#
-    # Start-Sleep -Seconds 10
-    
-    # Write-Host "Rebooting $($VmObj.Name) to apply all kernel updates" -ForegroundColor Yellow
-
-    # # get the nic info for test ping
-    # $nicId = $VmObj.NetworkProfile.NetworkInterfaces.Id
-    # $nicname = $nicId.split('/')
-    # $serverIp = Get-AzNetworkInterface -Name $nicname[8]
-
-    # $targetstatus = ("Success", "Success", "Success", "Success")
-    # do 
-    # {
-    #     $ping = Test-Connection -TargetName $serverIp.IpConfigurations.PrivateIpAddress
-    #     Start-Sleep -Seconds 3
-    # } until ($ping.status[0..3] -eq $targetstatus)
-#> 
     return $Validation, $updatelist, $restartvm
 }

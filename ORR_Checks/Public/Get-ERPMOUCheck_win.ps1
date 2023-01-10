@@ -11,8 +11,8 @@
         FunctionName    : Get-ERPMOUCheck_win
         Created by      : Cody Parker
         Date Coded      : 07/9/2021
-        Modified by     : 
-        Date Modified   : 
+        Modified by     : ...
+        Date Modified   : ...
 
 #>
 Function Get-ERPMOUCheck_win
@@ -30,7 +30,7 @@ Function Get-ERPMOUCheck_win
     
         $validateerpm = $erpm.Value.message
 
-        if ($validateerpm -notlike "*LDAP://*")
+        if ($validateerpm -notlike "your_LDAP_string")
         {
             $validation.add([PSCustomObject]@{System = 'Server'
             Step = 'ERPMCheck'
